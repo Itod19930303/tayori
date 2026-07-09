@@ -67,6 +67,9 @@ SNSではなく「業務ツール」として設計する。
 - **削除操作禁止** — ファイル・ブランチ・DB削除は事前確認必須
 - **修正前に依存関係を調査** — 影響箇所とリグレッションテスト対象を先に提示する
 
+実装の進め方（TDD・共通化基準・コメントルール）は [`.claude/rules/development.md`](.claude/rules/development.md) を参照。
+コンポーネント設計（Atomic Design）は [`.claude/rules/atomic-design.md`](.claude/rules/atomic-design.md) を参照。
+
 ## 参照ドキュメント
 
 - [`docs/画像・動画共有アプリ 機能一覧.md`](docs/画像・動画共有アプリ%20機能一覧.md)
