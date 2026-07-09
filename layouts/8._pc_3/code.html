@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+
+<html class="light" lang="ja" style=""><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>たより | アルバムの閲覧権限</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600&amp;family=Source+Serif+4:wght@600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,FILL@0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "error": "#ba1a1a",
+                    "secondary-fixed": "#ffdbcb",
+                    "secondary": "#8c4e2e",
+                    "surface-variant": "#eae1da",
+                    "error-container": "#ffdad6",
+                    "surface-container-lowest": "#ffffff",
+                    "primary-container": "#5f7a61",
+                    "on-primary": "#ffffff",
+                    "surface-dim": "#e1d8d2",
+                    "on-secondary": "#ffffff",
+                    "inverse-on-surface": "#f8efe8",
+                    "surface-container": "#f5ece5",
+                    "on-primary-fixed": "#07200e",
+                    "on-error": "#ffffff",
+                    "surface-container-highest": "#eae1da",
+                    "tertiary-container": "#74736e",
+                    "secondary-fixed-dim": "#ffb692",
+                    "primary-fixed-dim": "#b1ceb1",
+                    "secondary-container": "#feae87",
+                    "on-error-container": "#93000a",
+                    "surface": "#fff8f4",
+                    "on-tertiary": "#ffffff",
+                    "background": "#fff8f4",
+                    "on-primary-fixed-variant": "#334d36",
+                    "on-surface": "#1f1b17",
+                    "inverse-primary": "#b1ceb1",
+                    "on-tertiary-fixed-variant": "#474742",
+                    "outline": "#737971",
+                    "on-primary-container": "#efffec",
+                    "inverse-surface": "#34302b",
+                    "surface-tint": "#4a654d",
+                    "on-surface-variant": "#434842",
+                    "on-tertiary-container": "#fdfaf3",
+                    "tertiary": "#5c5b56",
+                    "on-secondary-fixed": "#341100",
+                    "outline-variant": "#c3c8bf",
+                    "on-tertiary-fixed": "#1c1c18",
+                    "tertiary-fixed": "#e5e2db",
+                    "primary": "#47614a",
+                    "surface-container-low": "#fbf2eb",
+                    "surface-container-high": "#f0e7df",
+                    "on-secondary-container": "#793f21",
+                    "on-secondary-fixed-variant": "#6f3819",
+                    "tertiary-fixed-dim": "#c9c6c0",
+                    "surface-bright": "#fff8f4",
+                    "primary-fixed": "#cceacc",
+                    "on-background": "#1f1b17"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "margin-mobile": "16px",
+                    "stack-sm": "8px",
+                    "stack-lg": "32px",
+                    "container-max": "1280px",
+                    "margin-desktop": "40px",
+                    "stack-md": "16px",
+                    "gutter": "24px",
+                    "unit": "8px"
+            },
+            "fontFamily": {
+                    "headline-md": ["Source Serif 4"],
+                    "body-md": ["Be Vietnam Pro"],
+                    "headline-lg-mobile": ["Source Serif 4"],
+                    "display-lg": ["Source Serif 4"],
+                    "headline-lg": ["Source Serif 4"],
+                    "caption": ["Be Vietnam Pro"],
+                    "body-lg": ["Be Vietnam Pro"],
+                    "label-md": ["Be Vietnam Pro"]
+            },
+            "fontSize": {
+                    "headline-md": ["24px", {"lineHeight": "1.3", "fontWeight": "600"}],
+                    "body-md": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                    "headline-lg-mobile": ["28px", {"lineHeight": "1.2", "fontWeight": "600"}],
+                    "display-lg": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-lg": ["32px", {"lineHeight": "1.2", "fontWeight": "600"}],
+                    "caption": ["12px", {"lineHeight": "1.4", "fontWeight": "400"}],
+                    "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                    "label-md": ["14px", {"lineHeight": "1.4", "letterSpacing": "0.01em", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            background-color: #fff8f4;
+            color: #1f1b17;
+            -webkit-font-smoothing: antialiased;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .custom-shadow {
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05), 0 2px 4px rgba(0, 0, 0, 0.02);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col md:flex-row overflow-x-hidden">
+<!-- SideNavBar (Mobile Top, Desktop Side) -->
+<aside class="hidden md:flex flex-col p-stack-md gap-stack-sm h-screen w-64 left-0 sticky top-0 bg-surface-container-low flex-shrink-0 border-r border-surface-variant">
+<div class="mb-stack-lg px-2">
+<h1 class="font-display-lg text-headline-lg text-primary mb-2">たより</h1>
+<div class="mt-4 flex items-center gap-3">
+<div class="rounded-full bg-secondary-container flex items-center justify-center overflow-hidden h-12 w-12">
+<img alt="「たより」ブランドロゴ" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAoOR3L4SVlL5ghctn_wram0YKnuDjGg_bRM3EzPHdQci4H1Zr84vOjvl3AVHeGJBAf1hs9KEb6Z4EMgupRWjFbyPy-FD-MQ-gVCsIT51cprO-ANLx0FwYSsx4IMvhpuge9bN9MoCuZMXesMQxkxWEQCwepBR64nAP_AVlafJgsmqbrafWU78ZiWEc3rQ69qMiRjswyEMGU60TInMfQm4zop0VEWu_h18l9wNCTwdN7bLjEe6XCYJ5al9SC5LTUJiuyb2alIVzg2u8"/>
+</div>
+<div>
+<p class="font-label-md text-label-md text-on-surface">ミラー家</p>
+<p class="text-[10px] font-caption text-on-surface-variant uppercase tracking-wider">1984年より</p>
+</div>
+</div>
+</div>
+<nav class="flex-1 space-y-2">
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-variant rounded-lg transition-all duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="font-label-md text-label-md">ホーム</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 bg-primary-container text-on-primary-container rounded-lg font-bold" href="#">
+<span class="material-symbols-outlined" data-icon="photo_album">photo_album</span>
+<span class="font-label-md text-label-md">家族のアルバム</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-variant rounded-lg transition-all duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+<span class="font-label-md text-label-md">共有アイテム</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-variant rounded-lg transition-all duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="auto_awesome">auto_awesome</span>
+<span class="font-label-md text-label-md">最近のハイライト</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-variant rounded-lg transition-all duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="delete">delete</span>
+<span class="font-label-md text-label-md">ゴミ箱</span>
+</a>
+</nav>
+<button class="mt-4 w-full h-12 bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity">
+            メディアをアップロード
+        </button>
+<div class="mt-auto border-t border-surface-variant pt-4 space-y-1">
+<a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-variant rounded-lg transition-all duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="help">help</span>
+<span class="font-label-md text-label-md">ヘルプセンター</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-variant rounded-lg transition-all duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="cloud">cloud</span>
+<span class="font-label-md text-label-md">ストレージ</span>
+</a>
+</div>
+</aside>
+<!-- TopNavBar (Mobile Only) -->
+<header class="md:hidden flex justify-between items-center h-16 px-margin-mobile w-full bg-background border-b border-surface-variant sticky top-0 z-50">
+<h1 class="font-display-lg text-headline-md text-primary">たより</h1>
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-primary cursor-pointer" data-icon="notifications">notifications</span>
+<span class="material-symbols-outlined text-primary cursor-pointer" data-icon="settings">settings</span>
+</div>
+</header>
+<!-- Main Wrapper for Content and Footer -->
+<div class="flex-1 flex flex-col min-h-screen">
+<!-- Main Content Canvas -->
+<main class="flex-1 w-full max-w-[1200px] mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg">
+<!-- Header Section -->
+<div class="mb-stack-lg flex flex-col md:flex-row md:items-start justify-between gap-6">
+<div class="space-y-4">
+<a class="inline-flex items-center gap-2 text-primary hover:underline cursor-pointer group" href="#">
+<span class="material-symbols-outlined transition-transform group-hover:-translate-x-1" data-icon="arrow_back">arrow_back</span>
+<span class="font-label-md text-label-md">「2023年 夏休み」に戻る</span>
+</a>
+<div class="space-y-2">
+<h2 class="font-headline-lg text-headline-lg text-on-surface">アルバムの閲覧権限</h2>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-2xl">
+                    アルバム「2023年 夏休み」の閲覧、思い出の追加、管理設定ができるメンバーを管理します。
+                </p>
+</div>
+</div>
+<button class="flex items-center justify-center gap-2 h-12 px-6 bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-all active:scale-95 shadow-sm whitespace-nowrap">
+<span class="material-symbols-outlined text-[20px]" data-icon="person_add">person_add</span>
+                家族を招待
+            </button>
+</div>
+<!-- Permissions List Layout -->
+<div class="bg-surface-container-lowest rounded-xl custom-shadow overflow-hidden mb-12">
+<!-- Desktop Header -->
+<div class="hidden md:grid grid-cols-12 gap-4 px-8 py-4 bg-surface-container-high border-b border-outline-variant font-label-md text-label-md text-on-surface-variant">
+<div class="col-span-6">家族メンバー</div>
+<div class="col-span-1 text-center">閲覧</div>
+<div class="col-span-1 text-center">投稿</div>
+<div class="col-span-1 text-center">管理</div>
+<div class="col-span-3 text-right">操作</div>
+</div>
+<!-- Member Rows -->
+<div class="divide-y divide-surface-variant">
+<!-- Member 1: Sarah Miller -->
+<div class="grid grid-cols-1 md:grid-cols-12 items-center gap-4 px-6 md:px-8 py-6 hover:bg-surface transition-colors">
+<div class="col-span-6 flex items-center gap-4">
+<div class="w-12 h-12 flex-shrink-0 rounded-full overflow-hidden border-2 border-primary-fixed">
+<img alt="サラ・ミラー" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDkfrjxUyAR0SnuVCBHcuknkLFR6cuQfM0TE4NSEgtR8ZaNAVUOEnKNQCOpu1TB3-Lk-RcTMqh3FK8dt2M3C9T-3JKJVWUDw4IrUcGJaKxaeKvqiwOlLkUOPjGRvN842FbVQLa0w0KAPwMxdDZY00L9n3EWYi2OCFmzUaoZq9zlhJ5FLYKXhfiNZKl-4Ewso5RrXPF-ZITXgw19iQfDQ4Pfi_8gE4LFw1KmZhBQrsib3M8OOnVeZblrxjlyqy7bLdo1X9jiILFXDhU"/>
+</div>
+<div>
+<p class="font-body-lg text-body-lg font-semibold text-on-surface">サラ・ミラー</p>
+<p class="font-caption text-caption text-on-surface-variant">所有者・管理者</p>
+</div>
+</div>
+<!-- Mobile Labels + Desktop Columns -->
+<div class="md:contents">
+<div class="flex md:col-span-1 justify-between md:justify-center items-center py-1 md:py-0 border-t border-dashed border-outline-variant md:border-0 mt-2 md:mt-0">
+<span class="md:hidden font-label-md text-on-surface-variant">閲覧</span>
+<input checked="" class="rounded border-outline text-primary focus:ring-primary h-5 w-5 opacity-50 cursor-not-allowed" disabled="" type="checkbox"/>
+</div>
+<div class="flex md:col-span-1 justify-between md:justify-center items-center py-1 md:py-0">
+<span class="md:hidden font-label-md text-on-surface-variant">投稿</span>
+<input checked="" class="rounded border-outline text-primary focus:ring-primary h-5 w-5 opacity-50 cursor-not-allowed" disabled="" type="checkbox"/>
+</div>
+<div class="flex md:col-span-1 justify-between md:justify-center items-center py-1 md:py-0">
+<span class="md:hidden font-label-md text-on-surface-variant">管理</span>
+<input checked="" class="rounded border-outline text-primary focus:ring-primary h-5 w-5 opacity-50 cursor-not-allowed" disabled="" type="checkbox"/>
+</div>
+<div class="col-span-3 text-right flex items-center justify-end">
+<span class="material-symbols-outlined text-outline-variant cursor-help" data-icon="lock" title="所有者の権限は変更できません">lock</span>
+</div>
+</div>
+</div>
+<!-- Member 2: Thomas Miller -->
+<div class="grid grid-cols-1 md:grid-cols-12 items-center gap-4 px-6 md:px-8 py-6 hover:bg-surface transition-colors">
+<div class="col-span-6 flex items-center gap-4">
+<div class="w-12 h-12 flex-shrink-0 rounded-full overflow-hidden border-2 border-secondary-fixed">
+<img alt="トーマス・ミラー" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAkBDjvCvWb4D8FMXojZXXp_Uf8ZRfCjbziuIn4wZsYRuVkyAj3NfALiLDt-fnQl78AJ5HXVJHuMA2zt37WP6kvQjeeNLEham8AZfj_IOZRvbxNV6TjzfduLKfkS-lhgVDky8uFiSvbiuO_TeqDWhXbOe2Mdh-fkfIK4626zXnZcGK1m2RBjdUmU3hvvtFFZT5Kxx6bDmFY8qDf3sB3svd7dcDTOndEGuP5Zsaj1XULlkgc5Wcz9DKZ5ioB-OAkWx0I3b5u_RVHb9U"/>
+</div>
+<div>
+<p class="font-body-lg text-body-lg font-semibold text-on-surface">トーマス・ミラー</p>
+<p class="font-caption text-caption text-on-surface-variant">お父さん</p>
+</div>
+</div>
+<div class="md:contents">
+<div class="flex md:col-span-1 justify-between md:justify-center items-center py-1 md:py-0 border-t border-dashed border-outline-variant md:border-0 mt-2 md:mt-0">
+<span class="md:hidden font-label-md text-on-surface-variant">閲覧</span>
+<input checked="" class="rounded border-outline text-primary focus:ring-primary h-5 w-5 transition-transform active:scale-90" type="checkbox"/>
+</div>
+<div class="flex md:col-span-1 justify-between md:justify-center items-center py-1 md:py-0">
+<span class="md:hidden font-label-md text-on-surface-variant">投稿</span>
+<input checked="" class="rounded border-outline text-primary focus:ring-primary h-5 w-5 transition-transform active:scale-90" type="checkbox"/>
+</div>
+<div class="flex md:col-span-1 justify-between md:justify-center items-center py-1 md:py-0">
+<span class="md:hidden font-label-md text-on-surface-variant">管理</span>
+<input class="rounded border-outline text-primary focus:ring-primary h-5 w-5 transition-transform active:scale-90" type="checkbox"/>
+</div>
+<div class="col-span-3 text-right">
+<button class="p-2 hover:bg-surface-variant rounded-full transition-colors text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="more_vert">more_vert</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Member 3: Emily Chen -->
+<div class="grid grid-cols-1 md:grid-cols-12 items-center gap-4 px-6 md:px-8 py-6 hover:bg-surface transition-colors">
+<div class="col-span-6 flex items-center gap-4">
+<div class="w-12 h-12 flex-shrink-0 rounded-full overflow-hidden border-2 border-tertiary-fixed">
+<img alt="エミリー・チェン" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDS6r-WJ36PEUwAft0-WhfFDpn4Z66J9GF6HfHjxbvKsRVsC8gRDMEaxzINySJSOmuCWjtJPea7UYRhsHMkNF7BUfgRVxS0fB7zOFPZWoSWdyTf7KKYq_XRwn10qn0gFYwuzpYAGmPXHUhXioceqg4cxqc5mC596T26V4l2AjK7Qp7JTuCZ29fnAvMp6DN9hETsS_DIkOWOfn2Udlg0H33pX3X3qztEA1PLqgkIO6qGJVdhB9Yq0qavuDuKw3nBX-71uxVWW_2PhC4"/>
+</div>
+<div>
+<p class="font-body-lg text-body-lg font-semibold text-on-surface">エミリー・チェン</p>
+<p class="font-caption text-caption text-on-surface-variant">孫娘</p>
+</div>
+</div>
+<div class="md:contents">
+<div class="flex md:col-span-1 justify-between md:justify-center items-center py-1 md:py-0 border-t border-dashed border-outline-variant md:border-0 mt-2 md:mt-0">
+<span class="md:hidden font-label-md text-on-surface-variant">閲覧</span>
+<input checked="" class="rounded border-outline text-primary focus:ring-primary h-5 w-5 transition-transform active:scale-90" type="checkbox"/>
+</div>
+<div class="flex md:col-span-1 justify-between md:justify-center items-center py-1 md:py-0">
+<span class="md:hidden font-label-md text-on-surface-variant">投稿</span>
+<input class="rounded border-outline text-primary focus:ring-primary h-5 w-5 transition-transform active:scale-90" type="checkbox"/>
+</div>
+<div class="flex md:col-span-1 justify-between md:justify-center items-center py-1 md:py-0">
+<span class="md:hidden font-label-md text-on-surface-variant">管理</span>
+<input class="rounded border-outline text-primary focus:ring-primary h-5 w-5 transition-transform active:scale-90" type="checkbox"/>
+</div>
+<div class="col-span-3 text-right">
+<button class="p-2 hover:bg-surface-variant rounded-full transition-colors text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="more_vert">more_vert</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Member 4: Kevin Miller -->
+<div class="grid grid-cols-1 md:grid-cols-12 items-center gap-4 px-6 md:px-8 py-6 hover:bg-surface transition-colors">
+<div class="col-span-6 flex items-center gap-4">
+<div class="w-12 h-12 flex-shrink-0 rounded-full overflow-hidden border-2 border-primary-fixed">
+<img alt="ケビン・ミラー" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA4Wm5W5tQUXsXv28fPEPxUhrvfuMY0L4TUVgZfZT1FzNxMgkZog3WjBSRBNHRAsBs3GO0nh8KM-2K1NTB_77hF2gTzYJYchvWsED7N7tLnXIzElygF3KjMF0tefxjrE0Ud7IFeK6f4qEvboApDLu3ZWJI2tIDVa1Veic_W9UVcdJ1qW46Ld429PRd_d32DF3-hA5-aKMEaOzRx0CvQDCv0-04-V_HudJu3XQ5kJUoujrJ4aqhZIkfwZEnSNucpjL4XEzt43ZMblxE"/>
+</div>
+<div>
+<p class="font-body-lg text-body-lg font-semibold text-on-surface">ケビン・ミラー</p>
+<p class="font-caption text-caption text-on-surface-variant">いとこ</p>
+</div>
+</div>
+<div class="md:contents">
+<div class="flex md:col-span-1 justify-between md:justify-center items-center py-1 md:py-0 border-t border-dashed border-outline-variant md:border-0 mt-2 md:mt-0">
+<span class="md:hidden font-label-md text-on-surface-variant">閲覧</span>
+<input checked="" class="rounded border-outline text-primary focus:ring-primary h-5 w-5 transition-transform active:scale-90" type="checkbox"/>
+</div>
+<div class="flex md:col-span-1 justify-between md:justify-center items-center py-1 md:py-0">
+<span class="md:hidden font-label-md text-on-surface-variant">投稿</span>
+<input checked="" class="rounded border-outline text-primary focus:ring-primary h-5 w-5 transition-transform active:scale-90" type="checkbox"/>
+</div>
+<div class="flex md:col-span-1 justify-between md:justify-center items-center py-1 md:py-0">
+<span class="md:hidden font-label-md text-on-surface-variant">管理</span>
+<input checked="" class="rounded border-outline text-primary focus:ring-primary h-5 w-5 transition-transform active:scale-90" type="checkbox"/>
+</div>
+<div class="col-span-3 text-right">
+<button class="p-2 hover:bg-surface-variant rounded-full transition-colors text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="more_vert">more_vert</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Action Row -->
+<div class="bg-surface-container-low px-8 py-6 flex flex-col md:flex-row items-center justify-between gap-4">
+<div class="items-center gap-3 text-on-surface-variant hidden md:flex">
+<span class="material-symbols-outlined text-[20px] text-primary" data-icon="info">info</span>
+<span class="font-caption text-caption">管理者は他の方を招待したり、コンテンツを削除したりできます。</span>
+</div>
+<div class="flex gap-4 w-full md:w-auto">
+<button class="flex-1 md:flex-none px-6 py-2 text-on-surface font-label-md text-label-md hover:bg-surface-variant rounded-lg transition-all">一括編集</button>
+<button class="flex-1 md:flex-none px-8 py-2 bg-secondary text-on-secondary rounded-lg font-label-md text-label-md hover:opacity-90 transition-all shadow-md active:scale-95">変更を保存</button>
+</div>
+</div>
+</div>
+<!-- Recent Activity Section (Secondary Content) -->
+<div class="mt-stack-lg mb-12">
+<h3 class="font-headline-md text-headline-md text-on-surface mb-stack-md">最近の権限変更</h3>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-gutter">
+<div class="p-6 bg-surface-container-lowest rounded-xl border border-surface-variant flex items-start gap-5 shadow-sm hover:border-outline-variant transition-colors">
+<div class="flex-shrink-0 w-12 h-12 rounded-full bg-secondary-fixed flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-[28px]" data-icon="person_add">person_add</span>
+</div>
+<div class="space-y-1">
+<p class="font-body-md text-body-md text-on-surface leading-relaxed"><strong>サラ・ミラー</strong>が<strong>エミリー・チェン</strong>をアルバムに招待しました。</p>
+<p class="font-caption text-caption text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]" data-icon="schedule">schedule</span> 2日前
+                    </p>
+</div>
+</div>
+<div class="p-6 bg-surface-container-lowest rounded-xl border border-surface-variant flex items-start gap-5 shadow-sm hover:border-outline-variant transition-colors">
+<div class="flex-shrink-0 w-12 h-12 rounded-full bg-primary-fixed flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[28px]" data-icon="admin_panel_settings">admin_panel_settings</span>
+</div>
+<div class="space-y-1">
+<p class="font-body-md text-body-md text-on-surface leading-relaxed"><strong>ケビン・ミラー</strong>が管理者に昇格しました。</p>
+<p class="font-caption text-caption text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]" data-icon="schedule">schedule</span> 昨日 16:30
+                    </p>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Footer -->
+<footer class="w-full mt-auto border-t border-surface-variant bg-background">
+<div class="max-w-[1200px] mx-auto py-stack-lg px-margin-mobile md:px-margin-desktop flex flex-col md:flex-row justify-between items-center">
+<div class="flex flex-col items-center md:items-start gap-2">
+<p class="font-caption text-caption text-on-tertiary-fixed-variant">© 2024 たより - 世代を越えて想いをつなぐ</p>
+</div>
+<div class="flex gap-stack-md mt-stack-md md:mt-0">
+<a class="text-on-tertiary-fixed-variant hover:text-primary font-caption text-caption transition-colors" href="#">プライバシーポリシー</a>
+<a class="text-on-tertiary-fixed-variant hover:text-primary font-caption text-caption transition-colors" href="#">利用規約</a>
+<a class="text-on-tertiary-fixed-variant hover:text-primary font-caption text-caption transition-colors" href="#">アクセシビリティ</a>
+</div>
+</div>
+<!-- Spacer for Mobile Bottom Nav -->
+<div class="h-16 md:hidden"></div>
+</footer>
+</div>
+<!-- Mobile Bottom Navigation -->
+<nav class="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-background flex justify-around items-center border-t border-surface-variant z-50">
+<a class="flex flex-col items-center gap-1 text-on-surface-variant" href="#">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="text-[10px] font-label-md">ホーム</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-primary" href="#">
+<span class="material-symbols-outlined" data-icon="photo_album" style="font-variation-settings: 'FILL' 1;">photo_album</span>
+<span class="text-[10px] font-label-md font-bold">アルバム</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-on-surface-variant" href="#">
+<span class="material-symbols-outlined" data-icon="auto_awesome">auto_awesome</span>
+<span class="text-[10px] font-label-md">最近</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-on-surface-variant" href="#">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+<span class="text-[10px] font-label-md">家族</span>
+</a>
+</nav>
+<script>
+        // Simple scale effect on buttons for better interactivity
+        document.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('mousedown', () => btn.classList.add('scale-95'));
+            btn.addEventListener('mouseup', () => btn.classList.remove('scale-95'));
+            btn.addEventListener('mouseleave', () => btn.classList.remove('scale-95'));
+        });
+    </script>
+</body></html>
