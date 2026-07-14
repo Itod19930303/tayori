@@ -84,6 +84,21 @@ describe('app/albums/new/page (アルバム作成)', () => {
     expect(screen.getByRole('button', { name: /保存/ })).toBeEnabled()
   })
 
+  it('NAP-08: 書き込み失敗時に実際のエラー内容をconsole.errorへ出力する（本番切り分け用）', async () => {
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const failure = new Error('Missing or insufficient permissions.')
+    createAlbum.mockRejectedValue(failure)
+    render(<NewAlbumPage />)
+    await fillTitleAndSave()
+    await waitFor(() =>
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        expect.stringContaining('アルバム作成'),
+        failure
+      )
+    )
+    consoleErrorSpy.mockRestore()
+  })
+
   it('NAP-05: タイトル未入力ではクライアントバリデーションで止まり createAlbum を呼ばない', async () => {
     render(<NewAlbumPage />)
     await userEvent.click(screen.getByRole('button', { name: /保存/ }))

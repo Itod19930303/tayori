@@ -48,7 +48,10 @@ export default function NewAlbumPage() {
     try {
       const albumId = await createAlbum(values, currentUser)
       router.push(`/albums/${albumId}`)
-    } catch {
+    } catch (err) {
+      // 利用者へは共通メッセージのみ表示し、実際の原因（Security Rules拒否等）は
+      // コンソールで切り分けられるようにログへ残す。
+      console.error('アルバム作成に失敗しました', err)
       setError(SAVE_ERROR_MESSAGE)
       setIsSubmitting(false)
     }
