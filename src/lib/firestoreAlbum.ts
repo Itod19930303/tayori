@@ -9,6 +9,7 @@ import {
   orderBy,
   query,
   serverTimestamp,
+  Timestamp,
   where,
 } from 'firebase/firestore'
 import type { User } from 'firebase/auth'
@@ -38,7 +39,9 @@ export async function createAlbum(
     canView: true,
     canPost: true,
     canManage: true,
-    joinedAt: serverTimestamp(),
+    // serverTimestamp() は配列要素内では使用できない（Firestoreの制約）ため、
+    // members 配列内の joinedAt はクライアント側の Timestamp.now() を使う。
+    joinedAt: Timestamp.now(),
   }
 
   const docRef = await addDoc(collection(db, 'albums'), {

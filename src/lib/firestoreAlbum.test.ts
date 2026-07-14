@@ -20,6 +20,7 @@ const where = vi.fn((...args: unknown[]) => ({ __type: 'where', args }))
 const orderBy = vi.fn((...args: unknown[]) => ({ __type: 'orderBy', args }))
 const onSnapshot = vi.fn()
 const serverTimestamp = vi.fn((..._args: unknown[]) => ({ __type: 'serverTimestamp' }))
+const timestampNow = vi.fn(() => ({ __type: 'timestamp-now' }))
 
 vi.mock('firebase/firestore', () => ({
   getFirestore: vi.fn(() => ({})),
@@ -30,6 +31,7 @@ vi.mock('firebase/firestore', () => ({
   orderBy: (...args: unknown[]) => orderBy(...args),
   onSnapshot: (...args: unknown[]) => onSnapshot(...args),
   serverTimestamp: () => serverTimestamp(),
+  Timestamp: { now: () => timestampNow() },
 }))
 
 // firebase.ts の副作用初期化を避けるため db インスタンスをスタブ化する
@@ -91,6 +93,16 @@ describe('lib/firestoreAlbum - createAlbum', () => {
     expect(members[0].canView).toBe(true)
     expect(members[0].canPost).toBe(true)
     expect(members[0].canManage).toBe(true)
+  })
+
+  it('FA-11: members配列内のjoinedAtはserverTimestamp()ではなくTimestamp.now()を使う（Firestoreは配列内でのserverTimestamp()を許可しないため）', async () => {
+    addDoc.mockResolvedValue({ id: 'new-album-id' })
+    const { createAlbum } = await import('./firestoreAlbum')
+    await createAlbum({ title: '夏', description: '' }, mockUser)
+    const payload = addDoc.mock.calls[0][1] as Record<string, unknown>
+    const members = payload.members as Array<Record<string, unknown>>
+    expect(members[0].joinedAt).toEqual({ __type: 'timestamp-now' })
+    expect(members[0].joinedAt).not.toEqual({ __type: 'serverTimestamp' })
   })
 
   it('FA-03: 説明未入力（空文字）でも書き込める', async () => {
