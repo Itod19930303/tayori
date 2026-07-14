@@ -49,10 +49,28 @@ describe('components/templates/HomeTemplate', () => {
   it('HT-02: 作成ボタン押下で onCreateClick が呼ばれる', async () => {
     const onCreateClick = vi.fn()
     render(
-      <HomeTemplate albums={[]} loading={false} onCreateClick={onCreateClick} />
+      <HomeTemplate
+        albums={[makeAlbum('夏休み')]}
+        loading={false}
+        onCreateClick={onCreateClick}
+      />
     )
     await userEvent.click(screen.getByRole('button', { name: /新しいアルバム/ }))
     expect(onCreateClick).toHaveBeenCalledTimes(1)
+  })
+
+  it('HT-05: アルバム0件（loading=false）ではヘッダーの作成ボタンを表示しない（空状態内のボタンと重複させないため）', () => {
+    render(<HomeTemplate albums={[]} loading={false} onCreateClick={vi.fn()} />)
+    expect(
+      screen.queryByRole('button', { name: /新しいアルバム/ })
+    ).not.toBeInTheDocument()
+  })
+
+  it('HT-06: loading=true の間は0件でもヘッダーの作成ボタンを表示する（読み込み確定前のちらつき防止）', () => {
+    render(<HomeTemplate albums={[]} loading={true} onCreateClick={vi.fn()} />)
+    expect(
+      screen.getByRole('button', { name: /新しいアルバム/ })
+    ).toBeInTheDocument()
   })
 
   it('HT-03: albums/loading を AlbumGrid へ透過的に渡す', () => {

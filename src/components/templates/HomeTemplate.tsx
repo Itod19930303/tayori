@@ -13,19 +13,26 @@ export interface HomeTemplateProps {
 }
 
 export function HomeTemplate({ albums, loading, onCreateClick }: HomeTemplateProps) {
+  // 0件確定時（loading完了かつalbums空）はヘッダーの作成ボタンを隠す。
+  // 空状態内に同じ導線のボタンがあるため、両方出すと重複になる。
+  // loading中は件数未確定のため、確定後に急にボタンが現れるちらつきを避けて表示しておく。
+  const showHeaderCreateButton = loading || albums.length > 0
+
   return (
     <div className="flex min-h-screen flex-1 flex-col gap-stack-lg bg-background px-margin-mobile py-stack-lg md:px-margin-desktop">
       <header className="flex items-center justify-between">
         <h1 className="font-headline-lg text-headline-lg text-on-surface">
           アルバム
         </h1>
-        <Button
-          type="button"
-          onClick={onCreateClick}
-          className="h-12 rounded-lg bg-primary px-6 text-on-primary hover:opacity-90"
-        >
-          + 新しいアルバム
-        </Button>
+        {showHeaderCreateButton && (
+          <Button
+            type="button"
+            onClick={onCreateClick}
+            className="h-12 rounded-lg bg-primary px-6 text-on-primary hover:opacity-90"
+          >
+            + 新しいアルバム
+          </Button>
+        )}
       </header>
 
       <AlbumGrid albums={albums} loading={loading} onCreateClick={onCreateClick} />
