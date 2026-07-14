@@ -1,0 +1,60 @@
+rules_version = '2';
+// Firestore セキュリティルール（基本設計書 7.1）。
+// アルバムメンバー（memberUids に UID が含まれる）のみ読み書きを許可し、
+// 権限変更・アルバム更新は owner のみ、削除は MVP 期間中は全面禁止とする。
+// デプロイは本ファイルを Firebase へ反映する運用（本コミットでは配置のみ）。
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ヘルパー関数
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAlbumMember(albumData) {
+      return request.auth.uid in albumData.memberUids;
+    }
+
+    function isAlbumAdmin(albumData) {
+      // MVP では複雑な Array 検索を避け、owner のみを管理者として扱う
+      return request.auth.uid == albumData.ownerId;
+    }
+
+    // アルバム
+    match /albums/{albumId} {
+      // 読み: memberUids に自分の UID が含まれる
+      allow read: if isSignedIn() && isAlbumMember(resource.data);
+
+      // 作成: ログイン済み + ownerId が自分 + memberUids に自分を含む
+      allow create: if isSignedIn()
+        && request.resource.data.ownerId == request.auth.uid
+        && request.auth.uid in request.resource.data.memberUids;
+
+      // 更新: owner のみ（MVP: 権限変更は owner に限定）
+      allow update: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+
+      // 削除: 禁止（MVP 期間中）
+      allow delete: if false;
+
+      // メディアサブコレクション
+      match /media/{mediaId} {
+        // 読み: アルバムメンバーのみ
+        allow read: if isSignedIn()
+          && request.auth.uid in get(/databases/$(database)/documents/albums/$(albumId)).data.memberUids;
+
+        // 作成: メンバー + uploadedBy が自分（MVP 簡易版）
+        allow create: if isSignedIn()
+          && request.auth.uid in get(/databases/$(database)/documents/albums/$(albumId)).data.memberUids
+          && request.resource.data.uploadedBy == request.auth.uid;
+
+        // 更新・削除: MVP 期間中は禁止
+        allow update, delete: if false;
+      }
+    }
+
+    // ユーザープロファイル: 本人のみ読み書き
+    match /users/{uid} {
+      allow read, write: if isSignedIn() && request.auth.uid == uid;
+    }
+  }
+}
