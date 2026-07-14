@@ -44,7 +44,7 @@ export function LoginCard({ onSignIn, isLoading, error }: LoginCardProps) {
       <div className="flex flex-col items-center gap-stack-md text-center">
         <h1 className="font-display-lg text-display-lg text-primary">たより</h1>
         <p className="font-body-md text-body-md text-on-surface-variant">
-          LINEで流れてしまう画像・動画を、チームで一元管理。
+          LINEで流れてしまう画像・動画を、一元管理。
         </p>
 
         <Button

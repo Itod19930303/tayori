@@ -6,7 +6,7 @@ import { LoginCard } from './LoginCard'
 // LoginCard は molecules（props のみで完結、Firebase 直アクセス禁止）。
 // ロゴ/サブテキスト/ボタン/エラー表示の描画とコールバック・無効化・アクセシビリティを検証する。
 
-const SUBTEXT = 'LINEで流れてしまう画像・動画を、チームで一元管理。'
+const SUBTEXT = 'LINEで流れてしまう画像・動画を、一元管理。'
 
 describe('components/molecules/LoginCard', () => {
   it('LC-01: ロゴ「たより」とサブテキストが表示される', () => {

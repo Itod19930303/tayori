@@ -1,0 +1,69 @@
+import { describe, it, expect } from 'vitest'
+import { validateAlbumTitle, validateAlbumDescription } from './validators'
+
+// validators.ts は Firebase 非依存の純粋関数。アルバム作成フォームの入力ルール
+// （title: 必須・1〜50文字 / description: 任意・0〜200文字、基本設計書 4.5）を検証する。
+// 戻り値は「問題なければ null / エラー時は日本語メッセージ」で統一する。
+//
+// カバレッジ注記: 各関数冒頭の `(title ?? '').trim()` 等の `??` フォールバックは
+// 意図的に未テスト。呼び出し元（AlbumCreateForm/page.tsx）は useState('') で初期化した
+// string型のみを渡すため null/undefined は実際には来ないが、この関数はexportされた
+// 独立ユーティリティとして型上は呼び出し元を限定できないため防御している。
+// null/undefinedを明示的に渡すテストは型定義（string引数）と矛盾する入力の確認に
+// なるだけで実バグ検出に繋がらないためスキップしている（レビュー2026-07-14で許容判断）。
+
+describe('lib/validators - validateAlbumTitle', () => {
+  it('VA-01: 標準的なタイトルは有効（null）', () => {
+    expect(validateAlbumTitle('湖畔で過ごした夏休み')).toBeNull()
+  })
+
+  it('VA-02: 下限1文字は有効', () => {
+    expect(validateAlbumTitle('A')).toBeNull()
+  })
+
+  it('VA-03: 上限50文字ちょうどは有効', () => {
+    expect(validateAlbumTitle('あ'.repeat(50))).toBeNull()
+  })
+
+  it('VA-04: 51文字は上限超過エラー', () => {
+    const result = validateAlbumTitle('あ'.repeat(51))
+    expect(result).not.toBeNull()
+    expect(result).toContain('50')
+  })
+
+  it('VA-05: 空文字は必須エラー', () => {
+    const result = validateAlbumTitle('')
+    expect(result).not.toBeNull()
+    expect(result).toBe('アルバム名を入力してください')
+  })
+
+  it('VA-06: 空白のみ（trim後0文字）は必須エラー', () => {
+    const result = validateAlbumTitle('   ')
+    expect(result).not.toBeNull()
+    expect(result).toBe('アルバム名を入力してください')
+  })
+
+  it('VA-07: 前後空白を含む文字列はtrim後の長さで判定され有効', () => {
+    expect(validateAlbumTitle('  夏  ')).toBeNull()
+  })
+})
+
+describe('lib/validators - validateAlbumDescription', () => {
+  it('VA-08: 標準的な説明は有効（null）', () => {
+    expect(validateAlbumDescription('家族旅行の記録')).toBeNull()
+  })
+
+  it('VA-09: 0文字（未入力）は任意項目のため有効', () => {
+    expect(validateAlbumDescription('')).toBeNull()
+  })
+
+  it('VA-10: 上限200文字ちょうどは有効', () => {
+    expect(validateAlbumDescription('あ'.repeat(200))).toBeNull()
+  })
+
+  it('VA-11: 201文字は上限超過エラー', () => {
+    const result = validateAlbumDescription('あ'.repeat(201))
+    expect(result).not.toBeNull()
+    expect(result).toContain('200')
+  })
+})
