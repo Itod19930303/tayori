@@ -8,13 +8,18 @@ export type NewAlbumTemplateProps = AlbumCreateFormProps
 export function NewAlbumTemplate(props: NewAlbumTemplateProps) {
   return (
     <div className="flex min-h-screen flex-1 flex-col gap-stack-lg bg-background px-margin-mobile py-stack-lg md:px-margin-desktop">
-      <header>
-        <h1 className="font-headline-lg text-headline-lg text-on-surface">
-          新しいアルバム
-        </h1>
-      </header>
+      {/* mx-auto で画面中央へ寄せる。max-w-2xl は auto margin だけでは効かないため
+          w-full と併用し、幅を絞ったうえで中央配置する。 */}
+      <div
+        data-testid="new-album-container"
+        className="mx-auto flex w-full max-w-2xl flex-col gap-stack-lg"
+      >
+        <header>
+          <h1 className="font-headline-lg text-headline-lg text-on-surface">
+            新しいアルバム
+          </h1>
+        </header>
 
-      <div className="w-full max-w-2xl">
         <AlbumCreateForm {...props} />
       </div>
     </div>

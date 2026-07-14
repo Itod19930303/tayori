@@ -35,4 +35,13 @@ describe('components/templates/NewAlbumTemplate', () => {
       'bg-background'
     )
   })
+
+  it('NAT-04: フォームを内包するコンテナが画面中央に配置される（mx-auto + max-w）', () => {
+    const { container } = render(
+      <NewAlbumTemplate onSubmit={vi.fn()} isSubmitting={false} error={null} />
+    )
+    const wrapper = container.querySelector('[data-testid="new-album-container"]')
+    expect(wrapper?.className).toContain('mx-auto')
+    expect(wrapper?.className).toContain('max-w-2xl')
+  })
 })
