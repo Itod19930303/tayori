@@ -13,15 +13,26 @@ export interface FileValidationError {
 export interface UploadTemplateProps {
   uploads: UploadItemState[]
   onSelectFiles: (files: FileList) => void
+  onSave: () => void
+  canSave: boolean
   onRetry?: (mediaId: string) => void
+  onToggleSelect?: (mediaId: string) => void
+  onDeleteSelected?: () => void
   fileErrors?: FileValidationError[]
+  // done 行のキャプションに添える保存先アルバム名。UploadList へ透過する（設計書4.7）。
+  albumName?: string
 }
 
 export function UploadTemplate({
   uploads,
   onSelectFiles,
+  onSave,
+  canSave,
   onRetry,
+  onToggleSelect,
+  onDeleteSelected,
   fileErrors,
+  albumName,
 }: UploadTemplateProps) {
   // ファイル選択（input change）を FileList のまま page 層へ委ねる。
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -73,11 +84,32 @@ export function UploadTemplate({
         </div>
       )}
 
-      <UploadList uploads={uploads} onRetry={onRetry} />
+      <UploadList
+        uploads={uploads}
+        onRetry={onRetry}
+        onToggleSelect={onToggleSelect}
+        onDeleteSelected={onDeleteSelected}
+        albumName={albumName}
+      />
 
-      {/* プライバシー案内バナー（緑背景、設計書4.7） */}
-      <div className="rounded-lg bg-primary-fixed p-stack-md font-body-md text-body-md text-on-surface">
-        すべてのアップロードは暗号化され、安全に保存されます。
+      {/* フッター操作バー: プライバシー案内 + 「保存」ボタン（設計書4.7） */}
+      <div className="flex flex-col gap-stack-md">
+        {/* プライバシー案内バナー（緑背景、設計書4.7） */}
+        <div className="rounded-lg bg-primary-fixed p-stack-md font-body-md text-body-md text-on-surface">
+          すべてのアップロードは暗号化され、安全に保存されます。
+        </div>
+
+        {/* 「保存」ボタン: 確定前（pending）行が1件以上のとき活性。全件削除時は非活性で
+            表示を維持し、保存操作の起点を失わせない（設計書4.7 保存ボタン活性条件）。 */}
+        <button
+          type="button"
+          onClick={onSave}
+          disabled={!canSave}
+          aria-disabled={!canSave}
+          className="inline-flex h-12 items-center justify-center rounded-lg bg-secondary px-8 font-label-md text-label-md text-on-secondary shadow-md hover:opacity-90 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          保存
+        </button>
       </div>
     </div>
   )

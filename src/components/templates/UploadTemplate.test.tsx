@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { UploadTemplate } from './UploadTemplate'
 import type { UploadItemState } from '@/components/molecules/UploadItem'
@@ -13,25 +13,43 @@ function makeFile(name: string): File {
   return file
 }
 
-function makeUpload(mediaId: string): UploadItemState {
+function makeUpload(
+  mediaId: string,
+  overrides: Partial<UploadItemState> = {}
+): UploadItemState {
   return {
     file: makeFile(`${mediaId}.jpg`),
     mediaId,
     status: 'uploading',
     progress: 10,
+    ...overrides,
   }
 }
 
 describe('components/templates/UploadTemplate', () => {
   it('UT-01: ヘッダー「思い出を保存中」とファイル選択UIを表示する', () => {
-    render(<UploadTemplate uploads={[]} onSelectFiles={vi.fn()} />)
+    render(
+      <UploadTemplate
+        uploads={[]}
+        onSelectFiles={vi.fn()}
+        onSave={vi.fn()}
+        canSave={false}
+      />
+    )
     expect(screen.getByText('思い出を保存中')).toBeInTheDocument()
     expect(screen.getByLabelText(/ファイルを選択/)).toBeInTheDocument()
   })
 
   it('UT-02: ファイル選択で onSelectFiles が選択ファイルで呼ばれる', async () => {
     const onSelectFiles = vi.fn()
-    render(<UploadTemplate uploads={[]} onSelectFiles={onSelectFiles} />)
+    render(
+      <UploadTemplate
+        uploads={[]}
+        onSelectFiles={onSelectFiles}
+        onSave={vi.fn()}
+        canSave={false}
+      />
+    )
     const input = screen.getByLabelText(/ファイルを選択/) as HTMLInputElement
     await userEvent.upload(input, [makeFile('a.jpg'), makeFile('b.jpg')])
     expect(onSelectFiles).toHaveBeenCalledTimes(1)
@@ -44,6 +62,8 @@ describe('components/templates/UploadTemplate', () => {
       <UploadTemplate
         uploads={[makeUpload('a'), makeUpload('b'), makeUpload('c')]}
         onSelectFiles={vi.fn()}
+        onSave={vi.fn()}
+        canSave={false}
       />
     )
     expect(screen.getByText('a.jpg')).toBeInTheDocument()
@@ -52,7 +72,14 @@ describe('components/templates/UploadTemplate', () => {
   })
 
   it('UT-04: プライバシー案内バナーを表示する', () => {
-    render(<UploadTemplate uploads={[]} onSelectFiles={vi.fn()} />)
+    render(
+      <UploadTemplate
+        uploads={[]}
+        onSelectFiles={vi.fn()}
+        onSave={vi.fn()}
+        canSave={false}
+      />
+    )
     expect(
       screen.getByText(/すべてのアップロードは暗号化され、安全に保存されます。/)
     ).toBeInTheDocument()
@@ -60,16 +87,23 @@ describe('components/templates/UploadTemplate', () => {
 
   it('UT-05: 背景に bg-background を用いる', () => {
     const { container } = render(
-      <UploadTemplate uploads={[]} onSelectFiles={vi.fn()} />
+      <UploadTemplate
+        uploads={[]}
+        onSelectFiles={vi.fn()}
+        onSave={vi.fn()}
+        canSave={false}
+      />
     )
     expect(container.firstChild).toHaveClass('bg-background')
   })
 
-  it('UT-06: fileErrors を渡すとインラインエラーを表示する（page層からのバリデーション結果）', () => {
+  it('UT-09: fileErrors を渡すとインラインエラーを表示する（page層からのバリデーション結果）', () => {
     render(
       <UploadTemplate
         uploads={[]}
         onSelectFiles={vi.fn()}
+        onSave={vi.fn()}
+        canSave={false}
         fileErrors={[
           {
             fileName: 'a.pdf',
@@ -82,5 +116,89 @@ describe('components/templates/UploadTemplate', () => {
     expect(
       screen.getByText(/対応していないファイル形式です/)
     ).toBeInTheDocument()
+  })
+
+  it('UT-06: canSave=true のとき「保存」ボタンが活性で押下すると onSave が呼ばれる', async () => {
+    const onSave = vi.fn()
+    render(
+      <UploadTemplate
+        uploads={[makeUpload('a', { status: 'pending' })]}
+        onSelectFiles={vi.fn()}
+        onSave={onSave}
+        canSave={true}
+      />
+    )
+    const saveButton = screen.getByRole('button', { name: '保存' })
+    expect(saveButton).toBeEnabled()
+    await userEvent.click(saveButton)
+    expect(onSave).toHaveBeenCalledTimes(1)
+  })
+
+  it('UT-07: canSave=false のとき「保存」ボタンが非活性（disabled）になる', async () => {
+    const onSave = vi.fn()
+    render(
+      <UploadTemplate
+        uploads={[]}
+        onSelectFiles={vi.fn()}
+        onSave={onSave}
+        canSave={false}
+      />
+    )
+    const saveButton = screen.getByRole('button', { name: '保存' })
+    expect(saveButton).toBeDisabled()
+    await userEvent.click(saveButton)
+    expect(onSave).not.toHaveBeenCalled()
+  })
+
+  it('UT-10: albumName を UploadList/UploadItem へ透過し done 行に「保存済み · アルバム名」を表示する', () => {
+    render(
+      <UploadTemplate
+        uploads={[makeUpload('a', { status: 'done', progress: 100 })]}
+        onSelectFiles={vi.fn()}
+        onSave={vi.fn()}
+        canSave={false}
+        albumName="湖畔で過ごした夏休み"
+      />
+    )
+    expect(
+      screen.getByText('保存済み · 湖畔で過ごした夏休み')
+    ).toBeInTheDocument()
+  })
+
+  it('UT-11: ファイル未選択（空の change）では onSelectFiles を呼ばない（未選択分岐）', () => {
+    const onSelectFiles = vi.fn()
+    render(
+      <UploadTemplate
+        uploads={[]}
+        onSelectFiles={onSelectFiles}
+        onSave={vi.fn()}
+        canSave={false}
+      />
+    )
+    const input = screen.getByLabelText(/ファイルを選択/) as HTMLInputElement
+    // ダイアログをキャンセルした場合など、files が空のまま change が発火するケースを再現する
+    fireEvent.change(input, { target: { files: [] } })
+    expect(onSelectFiles).not.toHaveBeenCalled()
+  })
+
+  it('UT-08: onToggleSelect / onDeleteSelected を UploadList へ透過的に渡す', async () => {
+    const onToggleSelect = vi.fn()
+    const onDeleteSelected = vi.fn()
+    render(
+      <UploadTemplate
+        uploads={[makeUpload('a', { status: 'pending', selected: true })]}
+        onSelectFiles={vi.fn()}
+        onSave={vi.fn()}
+        canSave={true}
+        onToggleSelect={onToggleSelect}
+        onDeleteSelected={onDeleteSelected}
+      />
+    )
+    await userEvent.click(screen.getByRole('checkbox'))
+    expect(onToggleSelect).toHaveBeenCalledWith('a')
+    await userEvent.click(
+      screen.getByRole('button', { name: /選択項目を削除/ })
+    )
+    expect(onDeleteSelected).toHaveBeenCalledTimes(1)
   })
 })

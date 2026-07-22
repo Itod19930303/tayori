@@ -4,7 +4,7 @@
 // useAuth でガードし、canPost 権限を確認したうえで、ファイル選択→validateMediaFile→
 // uploadFile（進捗コールバックで state 更新）→createMediaDoc のオーケストレーションを行う。
 // 実処理（Storage/Firestore）はライブラリへ委ね、状態管理と遷移をこの層に集約する。
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { useAlbum } from '@/hooks/useAlbum'
@@ -52,6 +52,11 @@ export default function UploadPage() {
   const [uploads, setUploads] = useState<UploadItemState[]>([])
   const [fileErrors, setFileErrors] = useState<FileValidationError[]>([])
 
+  // アンマウント時クリーンアップ用に最新の uploads を保持する ref。
+  // クリーンアップ effect の依存配列を空にするとマウント時点の空配列をクロージャで固定してしまい
+  // 残存 previewUrl を解放できない（stale closure）。ref を経由して常に最新値を参照する。
+  const uploadsRef = useRef<UploadItemState[]>(uploads)
+
   // 未ログインなら /login へ誘導し、returnUrl にアップロード画面パスを保持する（基本設計書 7.4）。
   useEffect(() => {
     if (!authLoading && !currentUser) {
@@ -60,6 +65,23 @@ export default function UploadPage() {
       )
     }
   }, [authLoading, currentUser, router, albumId])
+
+  // 描画のたびに最新の uploads を ref へ同期し、アンマウント時クリーンアップから参照できるようにする。
+  useEffect(() => {
+    uploadsRef.current = uploads
+  }, [uploads])
+
+  // 画面離脱時に残っている確定前プレビューの Object URL を解放し、メモリリークを防ぐ
+  // （previewUrl の生成/解放は page 層に集約する。設計書4.7）。
+  // uploadsRef を参照することで、アンマウント時点で実際に残っている pending 行の previewUrl を確実に解放する。
+  useEffect(() => {
+    return () => {
+      uploadsRef.current.forEach((u) => {
+        if (u.previewUrl) URL.revokeObjectURL(u.previewUrl)
+      })
+    }
+    // アンマウント時のみ実行する。最新 uploads は uploadsRef 経由で参照するため依存は空でよい。
+  }, [])
 
   // 進捗に応じて該当アップロード行のみ差分更新する。
   const updateItem = (key: string, patch: Partial<UploadItemState>) => {
@@ -102,11 +124,13 @@ export default function UploadPage() {
     }
   }
 
-  // ファイル選択時: 形式・サイズを検証し、通過分のみ waiting 行を追加してアップロードを開始する。
-  // 無効ファイルはインラインエラーとして表示し、有効分の処理は止めない（設計書8.1 #4・#5）。
+  // フェーズ1: ファイル選択時は形式・サイズを検証し、通過分のみ確定前（pending）行として
+  // 一覧へ追加する。ここでは uploadFile も Firestore 書き込みも呼ばず、サムネイル用の
+  // previewUrl を生成するだけに留める。無効ファイルはインラインエラーとして表示し、有効分の
+  // 追加は止めない（設計書6.3 フェーズ1 / 8.1 #4・#5）。
   const handleSelectFiles = (files: FileList) => {
     const errors: FileValidationError[] = []
-    const accepted: { file: File; key: string }[] = []
+    const accepted: UploadItemState[] = []
 
     Array.from(files).forEach((file) => {
       const message = validateMediaFile(file)
@@ -114,25 +138,60 @@ export default function UploadPage() {
         errors.push({ fileName: file.name, message })
         return
       }
-      accepted.push({ file, key: crypto.randomUUID() })
+      accepted.push({
+        file,
+        mediaId: crypto.randomUUID(),
+        status: 'pending',
+        progress: 0,
+        selected: false,
+        previewUrl: URL.createObjectURL(file),
+      })
     })
 
     setFileErrors(errors)
 
     if (accepted.length > 0) {
-      setUploads((prev) => [
-        ...prev,
-        ...accepted.map(({ file, key }) => ({
-          file,
-          mediaId: key,
-          status: 'waiting' as const,
-          progress: 0,
-        })),
-      ])
-      accepted.forEach(({ file, key }) => {
-        void runUpload(file, key, false)
-      })
+      setUploads((prev) => [...prev, ...accepted])
     }
+  }
+
+  // フェーズ2: チェックボックス操作。該当 pending 行の選択状態をトグルする（ローカルstateのみ）。
+  const handleToggleSelect = (key: string) => {
+    setUploads((prev) =>
+      prev.map((u) =>
+        u.mediaId === key && u.status === 'pending'
+          ? { ...u, selected: !u.selected }
+          : u
+      )
+    )
+  }
+
+  // フェーズ2: 「選択項目を削除」。選択中の pending 行を一覧から除外し、previewUrl を解放する。
+  // ローカル state 操作のみで完結し、Firestore/Storage の実削除APIは一切呼ばない
+  // （設計書6.3 フェーズ2 / restrictions.md 削除禁止対象は実削除API）。
+  const handleDeleteSelected = () => {
+    setUploads((prev) =>
+      prev.filter((u) => {
+        const remove = u.status === 'pending' && u.selected
+        if (remove && u.previewUrl) URL.revokeObjectURL(u.previewUrl)
+        return !remove
+      })
+    )
+  }
+
+  // フェーズ3: 「保存」押下で、残っている pending 行を waiting へ遷移させ、各行のアップロードを
+  // 並列に起動する（既存の uploadBytesResumable 並列方式を踏襲。設計書6.3 フェーズ3）。
+  const handleSave = () => {
+    const targets = uploads.filter((u) => u.status === 'pending')
+    if (targets.length === 0) return
+    setUploads((prev) =>
+      prev.map((u) =>
+        u.status === 'pending' ? { ...u, status: 'waiting' as const } : u
+      )
+    )
+    targets.forEach((u) => {
+      void runUpload(u.file, u.mediaId, false)
+    })
   }
 
   // エラー行クリック時: 同じファイルで再試行する（設計書6.3 再試行処理）。
@@ -141,6 +200,9 @@ export default function UploadPage() {
     if (!item) return
     void runUpload(item.file, key, true)
   }
+
+  // 保存ボタン活性条件: 確定前（pending）行が1件以上あること（設計書4.7）。
+  const canSave = uploads.some((u) => u.status === 'pending')
 
   // 認証確認中はちらつき防止のためスピナーを表示する。
   if (authLoading) {
@@ -167,8 +229,13 @@ export default function UploadPage() {
     <UploadTemplate
       uploads={uploads}
       onSelectFiles={handleSelectFiles}
+      onSave={handleSave}
+      canSave={canSave}
       onRetry={handleRetry}
+      onToggleSelect={handleToggleSelect}
+      onDeleteSelected={handleDeleteSelected}
       fileErrors={fileErrors}
+      albumName={album?.title}
     />
   )
 }
