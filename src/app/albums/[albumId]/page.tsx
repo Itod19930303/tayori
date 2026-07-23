@@ -11,10 +11,7 @@ import { useAlbum } from '@/hooks/useAlbum'
 import { useMediaList } from '@/hooks/useMediaList'
 import { useAcceptInvite } from '@/hooks/useAcceptInvite'
 import { AlbumDetailTemplate } from '@/components/templates/AlbumDetailTemplate'
-
-// 非メンバーアクセス時のメッセージ（基本設計書 8.1 #7）。
-const FORBIDDEN_MESSAGE =
-  'このアルバムへのアクセス権がありません。管理者に招待を依頼してください。'
+import { ERROR_MESSAGES } from '@/lib/messages/errorMessages'
 
 // 認証・データ確認中のフルスクリーンスピナー（ちらつき防止、基本設計書 7.4）。
 function LoadingScreen() {
@@ -72,12 +69,12 @@ export default function AlbumDetailPage() {
 
   // 存在しないアルバムは404相当を表示する（notFound と権限エラーを区別）。
   if (notFound || !album) {
-    return <NoticeScreen message="アルバムが見つかりません。" />
+    return <NoticeScreen message={ERROR_MESSAGES.ALBUM_NOT_FOUND} />
   }
 
   // 非メンバーは403相当を表示する（memberUids で判定、設計書7.1 isAlbumMember と一致）。
   if (!album.memberUids?.includes(currentUser.uid)) {
-    return <NoticeScreen message={FORBIDDEN_MESSAGE} />
+    return <NoticeScreen message={ERROR_MESSAGES.FORBIDDEN} />
   }
 
   // 「権限管理」リンクの表示判定（基本設計書 4.6）。ログインユーザー自身のメンバー情報を

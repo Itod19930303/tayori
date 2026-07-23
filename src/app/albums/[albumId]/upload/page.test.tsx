@@ -4,6 +4,7 @@ import { act } from 'react'
 import userEvent from '@testing-library/user-event'
 import type { User } from 'firebase/auth'
 import type { Album } from '@/types'
+import { ERROR_MESSAGES } from '@/lib/messages/errorMessages'
 
 // アップロードページ（pages 層）。新フロー: ファイル選択→確定前一覧（pending）追加のみ、
 // 「保存」ボタン押下で初めて uploadFile→createMediaDoc を並列起動する（基本設計書 4.7 / 6.3）。
@@ -241,7 +242,7 @@ describe('app/albums/[albumId]/upload/page (アップロード・確定前プレ
 
     await waitFor(() =>
       expect(
-        screen.getByText(/ネットワークが切断されました。タップして再試行してください。/)
+        screen.getByText(new RegExp(ERROR_MESSAGES.UPLOAD_NETWORK_FAILED))
       ).toBeInTheDocument()
     )
 
@@ -315,7 +316,7 @@ describe('app/albums/[albumId]/upload/page (アップロード・確定前プレ
   it('UPP-13: canPost=false はアップロード操作を許可しない', () => {
     albumState = { album: makeAlbum(false), loading: false, notFound: false }
     render(<UploadPage />)
-    expect(screen.getByText(/投稿権限がありません/)).toBeInTheDocument()
+    expect(screen.getByText(ERROR_MESSAGES.POST_FORBIDDEN)).toBeInTheDocument()
     expect(screen.queryByLabelText(/ファイルを選択/)).not.toBeInTheDocument()
   })
 

@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import { NewAlbumTemplate } from './NewAlbumTemplate'
+import { ERROR_MESSAGES } from '@/lib/messages/errorMessages'
 
 // NewAlbumTemplate は templates 層（実データ非保持）。AlbumCreateForm の配置と
 // props（isSubmitting/error）の透過的な伝播、背景トークンを検証する（基本設計書 4.5）。
@@ -19,11 +20,11 @@ describe('components/templates/NewAlbumTemplate', () => {
       <NewAlbumTemplate
         onSubmit={vi.fn()}
         isSubmitting={false}
-        error="保存に失敗しました。時間をおいて再試行してください。"
+        error={ERROR_MESSAGES.SAVE_FAILED}
       />
     )
     expect(screen.getByRole('alert')).toHaveTextContent(
-      '保存に失敗しました。時間をおいて再試行してください。'
+      ERROR_MESSAGES.SAVE_FAILED
     )
   })
 

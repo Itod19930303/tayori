@@ -3,6 +3,8 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { User } from 'firebase/auth'
 import type { Album, AlbumMember } from '@/types'
+import { ERROR_MESSAGES } from '@/lib/messages/errorMessages'
+import { SUCCESS_MESSAGES } from '@/lib/messages/successMessages'
 
 // 権限管理ページ（pages 層、基本設計書 4.8 / 6.7 / 7.3）。三段ガード・受諾フック実行・
 // 招待/取り消し/保存のオーケストレーションを検証する。フック群・firestorePermissions・
@@ -135,9 +137,7 @@ describe('app/albums/[albumId]/permissions/page (権限管理)', () => {
     }
     render(<PermissionsPage />)
     expect(
-      screen.getByText(
-        'このアルバムへのアクセス権がありません。管理者に招待を依頼してください。'
-      )
+      screen.getByText(ERROR_MESSAGES.FORBIDDEN)
     ).toBeInTheDocument()
     expect(screen.queryByText('アルバムの閲覧権限')).not.toBeInTheDocument()
   })
@@ -185,7 +185,9 @@ describe('app/albums/[albumId]/permissions/page (権限管理)', () => {
         mockUser
       )
     )
-    expect(await screen.findByText('招待を登録しました')).toBeInTheDocument()
+    expect(
+      await screen.findByText(SUCCESS_MESSAGES.INVITE_REGISTERED)
+    ).toBeInTheDocument()
   })
 
   it('PP-07: 招待取り消しで cancelInvite を呼び確定メンバー削除は呼ばない', async () => {
@@ -219,7 +221,7 @@ describe('app/albums/[albumId]/permissions/page (権限管理)', () => {
     await userEvent.click(screen.getByLabelText('編集者花子 の投稿権限'))
     await userEvent.click(screen.getByRole('button', { name: '変更を保存' }))
     expect(
-      await screen.findByText('保存に失敗しました。時間をおいて再試行してください。')
+      await screen.findByText(ERROR_MESSAGES.SAVE_FAILED)
     ).toBeInTheDocument()
   })
 
@@ -231,9 +233,7 @@ describe('app/albums/[albumId]/permissions/page (権限管理)', () => {
     )
     await userEvent.click(screen.getByRole('button', { name: '招待を取り消す' }))
     expect(
-      await screen.findByText(
-        '取り消しに失敗しました。時間をおいて再試行してください。'
-      )
+      await screen.findByText(ERROR_MESSAGES.CANCEL_FAILED)
     ).toBeInTheDocument()
   })
 
@@ -244,7 +244,7 @@ describe('app/albums/[albumId]/permissions/page (権限管理)', () => {
     await userEvent.type(screen.getByLabelText(/メールアドレス/), 'invitee@example.com')
     await userEvent.click(screen.getByRole('button', { name: '招待する' }))
     expect(
-      await screen.findByText('保存に失敗しました。時間をおいて再試行してください。')
+      await screen.findByText(ERROR_MESSAGES.SAVE_FAILED)
     ).toBeInTheDocument()
   })
 

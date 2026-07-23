@@ -7,6 +7,8 @@
 // 完了/エラーは既存アップロード画面と同系統のインラインメッセージで表示する（汎用Toast基盤は作らない）。
 import { useState } from 'react'
 import type { InvitePreset } from '@/lib/firestorePermissions'
+import { ERROR_MESSAGES } from '@/lib/messages/errorMessages'
+import { SUCCESS_MESSAGES } from '@/lib/messages/successMessages'
 
 export interface InviteModalProps {
   open: boolean
@@ -44,11 +46,11 @@ export function InviteModal({ open, albumId, onInvite, onClose }: InviteModalPro
   const handleInvite = () => {
     const normalized = email.trim().toLowerCase()
     if (normalized.length === 0) {
-      setError('メールアドレスを入力してください')
+      setError(ERROR_MESSAGES.EMAIL_REQUIRED)
       return
     }
     if (!EMAIL_PATTERN.test(normalized)) {
-      setError('メールアドレスの形式が正しくありません')
+      setError(ERROR_MESSAGES.EMAIL_INVALID_FORMAT)
       return
     }
     setError(null)
@@ -85,7 +87,7 @@ export function InviteModal({ open, albumId, onInvite, onClose }: InviteModalPro
             リンクをコピー
           </button>
           {copied && (
-            <p className="font-caption text-caption text-primary">リンクをコピーしました</p>
+            <p className="font-caption text-caption text-primary">{SUCCESS_MESSAGES.LINK_COPIED}</p>
           )}
         </div>
 

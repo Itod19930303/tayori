@@ -4,6 +4,7 @@ import {
   validateAlbumDescription,
   validateMediaFile,
 } from './validators'
+import { ERROR_MESSAGES } from './messages/errorMessages'
 
 // メディアファイルバリデーション（validateMediaFile）テストで用いる File スタブ生成ヘルパー
 // （テスト仕様書 4.10）。実バイト列を確保せず size のみ上書きし、大容量ファイルを
@@ -47,13 +48,13 @@ describe('lib/validators - validateAlbumTitle', () => {
   it('VA-05: 空文字は必須エラー', () => {
     const result = validateAlbumTitle('')
     expect(result).not.toBeNull()
-    expect(result).toBe('アルバム名を入力してください')
+    expect(result).toBe(ERROR_MESSAGES.TITLE_REQUIRED)
   })
 
   it('VA-06: 空白のみ（trim後0文字）は必須エラー', () => {
     const result = validateAlbumTitle('   ')
     expect(result).not.toBeNull()
-    expect(result).toBe('アルバム名を入力してください')
+    expect(result).toBe(ERROR_MESSAGES.TITLE_REQUIRED)
   })
 
   it('VA-07: 前後空白を含む文字列はtrim後の長さで判定され有効', () => {
@@ -84,9 +85,8 @@ describe('lib/validators - validateAlbumDescription', () => {
 // validateMediaFile はアップロード対象ファイルの形式・サイズを検証する純粋関数
 // （基本設計書 4.7 / 8.1 #4・#5）。対応形式（JPG/PNG/WebP/GIF/MP4/MOV）と
 // 上限（画像50MB・動画500MB）を境界値含めて検証する。
-const TYPE_ERROR =
-  '対応していないファイル形式です（対応: JPG, PNG, WebP, GIF, MP4, MOV）。'
-const SIZE_ERROR = 'ファイルサイズが上限（画像50MB・動画500MB）を超えています。'
+const TYPE_ERROR = ERROR_MESSAGES.UNSUPPORTED_FILE_TYPE
+const SIZE_ERROR = ERROR_MESSAGES.FILE_SIZE_EXCEEDED
 const MB = 1024 * 1024
 
 describe('lib/validators - validateMediaFile', () => {

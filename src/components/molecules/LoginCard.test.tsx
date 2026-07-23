@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { LoginCard } from './LoginCard'
+import { ERROR_MESSAGES } from '@/lib/messages/errorMessages'
 
 // LoginCard は molecules（props のみで完結、Firebase 直アクセス禁止）。
 // ロゴ/サブテキスト/ボタン/エラー表示の描画とコールバック・無効化・アクセシビリティを検証する。
@@ -32,7 +33,7 @@ describe('components/molecules/LoginCard', () => {
   })
 
   it('LC-04: error があるとき aria-live/role=alert 領域にメッセージ表示', () => {
-    const message = 'ネットワーク接続を確認してください。'
+    const message = ERROR_MESSAGES.AUTH_NETWORK_FAILED
     render(<LoginCard onSignIn={vi.fn()} isLoading={false} error={message} />)
     const alert = screen.getByRole('alert')
     expect(alert).toHaveTextContent(message)

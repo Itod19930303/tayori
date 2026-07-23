@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { User } from 'firebase/auth'
+import { ERROR_MESSAGES } from '@/lib/messages/errorMessages'
 
 // ログインページ（pages 層）の振る舞いを検証する。
 // useAuth / next/navigation / signInWithGoogle をモックし、
@@ -122,7 +123,7 @@ describe('app/(auth)/login/page', () => {
     await clickSignIn()
     await waitFor(() =>
       expect(screen.getByRole('alert')).toHaveTextContent(
-        'ネットワーク接続を確認してください。'
+        ERROR_MESSAGES.AUTH_NETWORK_FAILED
       )
     )
     expect(replace).not.toHaveBeenCalled()
@@ -134,7 +135,7 @@ describe('app/(auth)/login/page', () => {
     await clickSignIn()
     await waitFor(() =>
       expect(screen.getByRole('alert')).toHaveTextContent(
-        'しばらく時間をおいてから再試行してください。'
+        ERROR_MESSAGES.AUTH_TOO_MANY_REQUESTS
       )
     )
   })
@@ -145,7 +146,7 @@ describe('app/(auth)/login/page', () => {
     await clickSignIn()
     await waitFor(() =>
       expect(screen.getByRole('alert')).toHaveTextContent(
-        'Googleログインに失敗しました。もう一度お試しください。'
+        ERROR_MESSAGES.AUTH_SIGNIN_FAILED
       )
     )
   })

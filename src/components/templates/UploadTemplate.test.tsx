@@ -3,6 +3,7 @@ import { render, screen, fireEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { UploadTemplate } from './UploadTemplate'
 import type { UploadItemState } from '@/components/molecules/UploadItem'
+import { ERROR_MESSAGES } from '@/lib/messages/errorMessages'
 
 // UploadTemplate はアップロード画面のレイアウト骨格（templates 層、実データ非保持）。
 // ヘッダー・ファイル選択UI・UploadList・プライバシー案内バナーを配置する。
@@ -107,8 +108,7 @@ describe('components/templates/UploadTemplate', () => {
         fileErrors={[
           {
             fileName: 'a.pdf',
-            message:
-              '対応していないファイル形式です（対応: JPG, PNG, WebP, GIF, MP4, MOV）。',
+            message: ERROR_MESSAGES.UNSUPPORTED_FILE_TYPE,
           },
         ]}
       />

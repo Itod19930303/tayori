@@ -4,6 +4,7 @@
 // エラーは握りつぶさず呼び出し元へ伝播させ、表示可否の判断は getAuthErrorMessage に委ねる。
 import { signInWithPopup, signOut, GoogleAuthProvider, type User } from 'firebase/auth'
 import { auth } from './firebase'
+import { ERROR_MESSAGES } from './messages/errorMessages'
 
 // Googleアカウントでログインする。成功時はログインした User を返す。
 // ポップアップ方式を用いる（基本設計書 6.1 手順3）。
@@ -26,10 +27,10 @@ export function getAuthErrorMessage(code: string): string {
     case 'auth/popup-closed-by-user':
       return ''
     case 'auth/network-request-failed':
-      return 'ネットワーク接続を確認してください。'
+      return ERROR_MESSAGES.AUTH_NETWORK_FAILED
     case 'auth/too-many-requests':
-      return 'しばらく時間をおいてから再試行してください。'
+      return ERROR_MESSAGES.AUTH_TOO_MANY_REQUESTS
     default:
-      return 'Googleログインに失敗しました。もう一度お試しください。'
+      return ERROR_MESSAGES.AUTH_SIGNIN_FAILED
   }
 }

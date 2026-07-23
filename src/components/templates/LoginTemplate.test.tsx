@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import { LoginTemplate } from './LoginTemplate'
+import { ERROR_MESSAGES } from '@/lib/messages/errorMessages'
 
 // LoginTemplate はレイアウト骨格（templates 層）。実データを持たず LoginCard を配置し、
 // props を透過的に渡す。背景トークン bg-background を持ち、データ取得を含まないことを検証する。
@@ -19,11 +20,11 @@ describe('components/templates/LoginTemplate', () => {
       <LoginTemplate
         onSignIn={vi.fn()}
         isLoading={false}
-        error="ネットワーク接続を確認してください。"
+        error={ERROR_MESSAGES.AUTH_NETWORK_FAILED}
       />
     )
     expect(screen.getByRole('alert')).toHaveTextContent(
-      'ネットワーク接続を確認してください。'
+      ERROR_MESSAGES.AUTH_NETWORK_FAILED
     )
   })
 
