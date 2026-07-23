@@ -36,6 +36,7 @@ describe('components/templates/AlbumDetailTemplate', () => {
         mediaItems={[mockImageMedia]}
         loading={false}
         onUploadClick={vi.fn()}
+        canManage={false}
       />
     )
     expect(screen.getByText('湖畔で過ごした夏休み')).toBeInTheDocument()
@@ -51,6 +52,7 @@ describe('components/templates/AlbumDetailTemplate', () => {
         mediaItems={[mockImageMedia]}
         loading={false}
         onUploadClick={onUploadClick}
+        canManage={false}
       />
     )
     await userEvent.click(screen.getByRole('button', { name: /アップロード/ }))
@@ -64,6 +66,7 @@ describe('components/templates/AlbumDetailTemplate', () => {
         mediaItems={[mockImageMedia]}
         loading={false}
         onUploadClick={vi.fn()}
+        canManage={false}
       />
     )
     expect(screen.getByRole('img')).toBeInTheDocument()
@@ -76,8 +79,42 @@ describe('components/templates/AlbumDetailTemplate', () => {
         mediaItems={[]}
         loading={false}
         onUploadClick={vi.fn()}
+        canManage={false}
       />
     )
     expect(container.firstChild).toHaveClass('bg-background')
+  })
+
+  it('ADT-05: canManage=true のとき「権限管理」リンクを表示し、押下で onManagePermissionsClick が呼ばれる', async () => {
+    const onManagePermissionsClick = vi.fn()
+    render(
+      <AlbumDetailTemplate
+        album={mockAlbum}
+        mediaItems={[mockImageMedia]}
+        loading={false}
+        onUploadClick={vi.fn()}
+        canManage={true}
+        onManagePermissionsClick={onManagePermissionsClick}
+      />
+    )
+    const link = screen.getByRole('button', { name: /権限管理/ })
+    expect(link).toBeInTheDocument()
+    await userEvent.click(link)
+    expect(onManagePermissionsClick).toHaveBeenCalledTimes(1)
+  })
+
+  it('ADT-06: canManage=false のとき「権限管理」リンクを表示しない（DOM非存在）', () => {
+    render(
+      <AlbumDetailTemplate
+        album={mockAlbum}
+        mediaItems={[mockImageMedia]}
+        loading={false}
+        onUploadClick={vi.fn()}
+        canManage={false}
+      />
+    )
+    expect(
+      screen.queryByRole('button', { name: /権限管理/ })
+    ).not.toBeInTheDocument()
   })
 })

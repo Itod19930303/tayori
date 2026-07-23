@@ -169,4 +169,37 @@ describe('app/albums/[albumId]/page (アルバム詳細)', () => {
     expect(() => render(<AlbumDetailPage />)).not.toThrow()
     expect(screen.getByText('湖畔で過ごした夏休み')).toBeInTheDocument()
   })
+
+  it('ADP-12: canManage=true のメンバーには権限管理リンクを表示し、押下で /permissions へ遷移する', async () => {
+    // 自分（test-uid）が canManage:true でメンバーに含まれる状態を用意する。
+    albumState = {
+      album: {
+        ...makeAlbum(['test-uid']),
+        members: [{ uid: 'test-uid', canManage: true }],
+      } as unknown as Album,
+      loading: false,
+      notFound: false,
+    }
+    render(<AlbumDetailPage />)
+    const link = screen.getByRole('button', { name: /権限管理/ })
+    expect(link).toBeInTheDocument()
+    await userEvent.click(link)
+    expect(push).toHaveBeenCalledWith('/albums/album-1/permissions')
+  })
+
+  it('ADP-13: canManage=false（viewer/editor）のメンバーには権限管理リンクを表示しない（遷移不可）', () => {
+    // 自分（test-uid）が canManage:false でメンバーに含まれる状態を用意する。
+    albumState = {
+      album: {
+        ...makeAlbum(['test-uid']),
+        members: [{ uid: 'test-uid', canManage: false }],
+      } as unknown as Album,
+      loading: false,
+      notFound: false,
+    }
+    render(<AlbumDetailPage />)
+    expect(
+      screen.queryByRole('button', { name: /権限管理/ })
+    ).not.toBeInTheDocument()
+  })
 })

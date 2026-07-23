@@ -80,6 +80,12 @@ export default function AlbumDetailPage() {
     return <NoticeScreen message={FORBIDDEN_MESSAGE} />
   }
 
+  // 「権限管理」リンクの表示判定（基本設計書 4.6）。ログインユーザー自身のメンバー情報を
+  // members から引き、canManage を算出する。判定は page 層に閉じ込め、AlbumDetailTemplate へは
+  // 真偽値のみを渡す（templates 層で members 走査・権限判定を行わせないため）。
+  const myMember = album.members?.find((m) => m.uid === currentUser.uid)
+  const canManage = myMember?.canManage === true
+
   return (
     <AlbumDetailTemplate
       album={album}
@@ -88,6 +94,10 @@ export default function AlbumDetailPage() {
       onUploadClick={() => router.push(`/albums/${albumId}/upload`)}
       onSelectMedia={(media) =>
         router.push(`/albums/${albumId}/media/${media.mediaId}`)
+      }
+      canManage={canManage}
+      onManagePermissionsClick={() =>
+        router.push(`/albums/${albumId}/permissions`)
       }
     />
   )

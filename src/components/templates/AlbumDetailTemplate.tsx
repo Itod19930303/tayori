@@ -12,6 +12,12 @@ export interface AlbumDetailTemplateProps {
   loading: boolean
   onUploadClick: () => void
   onSelectMedia?: (media: Media) => void
+  // 「権限管理」リンクの表示条件（基本設計書 4.6）。ログインユーザー自身の canManage を
+  // page 層が myMember?.canManage として算出して渡す。templates 層は真偽のみで表示を切り替え、
+  // album.members の走査・権限判定は行わない（atomic-design.md のデータ非保持制約）。
+  canManage: boolean
+  // 権限管理リンク押下時のコールバック。実際の遷移は page 層の責務とする。
+  onManagePermissionsClick?: () => void
 }
 
 // Firestore Timestamp を利用者向けの日付文字列へ整形する。
@@ -31,6 +37,8 @@ export function AlbumDetailTemplate({
   loading,
   onUploadClick,
   onSelectMedia,
+  canManage,
+  onManagePermissionsClick,
 }: AlbumDetailTemplateProps) {
   const memberCount = album.members?.length ?? 0
 
@@ -45,13 +53,29 @@ export function AlbumDetailTemplate({
             メンバー{memberCount}人 · 更新 {formatUpdatedAt(album)}
           </p>
         </div>
-        <Button
-          type="button"
-          onClick={onUploadClick}
-          className="h-12 rounded-lg bg-primary px-6 text-on-primary hover:opacity-90"
-        >
-          アップロード
-        </Button>
+        <div className="flex items-center gap-stack-md">
+          {/* 権限管理リンク: canManage メンバーのみ表示（基本設計書 4.6）。非表示時は遷移導線を持たない。
+              歯車アイコン＋テキストラベルで、隣のアップロードボタンと視覚的に区別する。 */}
+          {canManage && (
+            <button
+              type="button"
+              onClick={onManagePermissionsClick}
+              className="inline-flex h-12 items-center gap-stack-sm rounded-lg px-4 font-label-md text-label-md text-on-surface-variant hover:bg-surface-variant hover:text-on-surface"
+            >
+              <span className="material-symbols-outlined" aria-hidden="true">
+                settings
+              </span>
+              権限管理
+            </button>
+          )}
+          <Button
+            type="button"
+            onClick={onUploadClick}
+            className="h-12 rounded-lg bg-primary px-6 text-on-primary hover:opacity-90"
+          >
+            アップロード
+          </Button>
+        </div>
       </header>
 
       <MediaGrid
