@@ -9,7 +9,12 @@ import { ERROR_MESSAGES } from './messages/errorMessages'
 const TITLE_MAX = 50
 const DESCRIPTION_MAX = 200
 
-// アルバム名: 必須・trim 後 1〜50 文字。空（空白のみ含む）は必須エラー、超過は上限エラー。
+/**
+ * アルバム名を検証する: 必須・trim 後 1〜50 文字。
+ * 空（空白のみ含む）は必須エラー、超過は上限エラーを返す。
+ * @param title 検証対象のアルバム名（未trim）
+ * @returns 問題なければ null、あればエラーメッセージ
+ */
 export function validateAlbumTitle(title: string): string | null {
   const trimmed = (title ?? '').trim()
   if (trimmed.length === 0) {
@@ -21,7 +26,12 @@ export function validateAlbumTitle(title: string): string | null {
   return null
 }
 
-// 説明: 任意・trim 後 0〜200 文字。未入力は許容し、超過のみ上限エラーとする。
+/**
+ * アルバム説明文を検証する: 任意・trim 後 0〜200 文字。
+ * 未入力は許容し、超過のみ上限エラーとする。
+ * @param description 検証対象の説明文（未trim）
+ * @returns 問題なければ null、あればエラーメッセージ
+ */
 export function validateAlbumDescription(description: string): string | null {
   const trimmed = (description ?? '').trim()
   if (trimmed.length > DESCRIPTION_MAX) {
@@ -46,6 +56,12 @@ const ALLOWED_MEDIA_TYPES = [
 const MAX_IMAGE_SIZE = 50 * 1024 * 1024 // 50MB
 const MAX_VIDEO_SIZE = 500 * 1024 * 1024 // 500MB
 
+/**
+ * アップロード対象メディアの形式・サイズを検証する（基本設計書 4.7 / 8.1 #4・#5）。
+ * 画像/動画で上限を切り替え、境界値（上限ちょうど）は有効側に含める。
+ * @param file 検証対象のファイル
+ * @returns 問題なければ null、あればエラーメッセージ
+ */
 export function validateMediaFile(file: File): string | null {
   if (!ALLOWED_MEDIA_TYPES.includes(file.type)) {
     return ERROR_MESSAGES.UNSUPPORTED_FILE_TYPE
