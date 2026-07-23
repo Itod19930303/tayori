@@ -6,8 +6,7 @@ import { CONFIRM_MESSAGES, type ConfirmMessageKey } from './confirmMessages'
 
 describe('lib/messages/confirmMessages', () => {
   it('MSG-06: CONFIRM_MESSAGES は空実装でも import 可能で型が成立する', () => {
-    expect(CONFIRM_MESSAGES).toBeDefined()
-    expect(typeof CONFIRM_MESSAGES).toBe('object')
+    expect(CONFIRM_MESSAGES).toEqual({})
     // ConfirmMessageKey 型が keyof typeof CONFIRM_MESSAGES として解決できることを型レベルで確認する。
     const keys: ConfirmMessageKey[] = Object.keys(
       CONFIRM_MESSAGES
