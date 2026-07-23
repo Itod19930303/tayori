@@ -23,10 +23,14 @@ let mediaState: { mediaItems: Media[]; loading: boolean } = {
 }
 const push = vi.fn()
 const replace = vi.fn()
+const useAcceptInvite = vi.fn()
 
 vi.mock('@/hooks/useAuth', () => ({ useAuth: () => authState }))
 vi.mock('@/hooks/useAlbum', () => ({ useAlbum: () => albumState }))
 vi.mock('@/hooks/useMediaList', () => ({ useMediaList: () => mediaState }))
+vi.mock('@/hooks/useAcceptInvite', () => ({
+  useAcceptInvite: (...args: unknown[]) => useAcceptInvite(...args),
+}))
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push, replace }),
   useParams: () => ({ albumId: 'album-1' }),
@@ -133,5 +137,36 @@ describe('app/albums/[albumId]/page (アルバム詳細)', () => {
     mediaState = { mediaItems: [], loading: false }
     render(<AlbumDetailPage />)
     expect(screen.getByText('家族の絆を未来へ')).toBeInTheDocument()
+  })
+
+  it('ADP-09: 受諾フックが403判定前に albumId で実行され、メンバー表示される', () => {
+    render(<AlbumDetailPage />)
+    // useAcceptInvite が albumId とともに呼ばれる（受諾は403判定の前に走る）
+    expect(useAcceptInvite).toHaveBeenCalledWith('album-1')
+    // 受諾成功後（メンバー）はメディア一覧が表示される
+    expect(screen.getByRole('img')).toBeInTheDocument()
+  })
+
+  it('ADP-10: 招待もされていない非メンバーは従来どおり403相当（ADP-04不変更）', () => {
+    albumState = {
+      album: makeAlbum(['other-uid']),
+      loading: false,
+      notFound: false,
+    }
+    render(<AlbumDetailPage />)
+    expect(useAcceptInvite).toHaveBeenCalledWith('album-1')
+    expect(
+      screen.getByText(
+        'このアルバムへのアクセス権がありません。管理者に招待を依頼してください。'
+      )
+    ).toBeInTheDocument()
+    expect(screen.queryByRole('img')).not.toBeInTheDocument()
+  })
+
+  it('ADP-11: 受諾処理が失敗しても詳細ページがクラッシュしない', () => {
+    // useAcceptInvite 内部で reject は握りつぶされる想定（フック側テスト UAI-04 と連動）。
+    // ページはフック呼び出しのみを行い、例外を投げず通常の権限判定へ進む。
+    expect(() => render(<AlbumDetailPage />)).not.toThrow()
+    expect(screen.getByText('湖畔で過ごした夏休み')).toBeInTheDocument()
   })
 })

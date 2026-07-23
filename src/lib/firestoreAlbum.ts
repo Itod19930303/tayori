@@ -49,6 +49,9 @@ export async function createAlbum(
     description: input.description.trim(),
     ownerId: currentUser.uid,
     memberUids: [currentUser.uid],
+    // owner は常に canManage:true のため adminUids にも自分を含める（基本設計書 5.1 / 7.1）。
+    // Security Rules の isAlbumAdmin が adminUids 包含で管理者判定できるよう非正規化して保持する。
+    adminUids: [currentUser.uid],
     members: [ownerMember],
     mediaCount: 0,
     createdAt: serverTimestamp(),

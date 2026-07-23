@@ -54,6 +54,7 @@ const mockAlbum = {
   description: '',
   ownerId: 'test-uid',
   memberUids: ['test-uid'],
+  adminUids: ['test-uid'],
   members: [],
   mediaCount: 0,
   createdAt: { toMillis: () => 0 },
@@ -81,6 +82,8 @@ describe('lib/firestoreAlbum - createAlbum', () => {
     const payload = addDoc.mock.calls[0][1] as Record<string, unknown>
     expect(payload.ownerId).toBe('test-uid')
     expect(payload.memberUids).toEqual(['test-uid'])
+    // owner は常に canManage:true のため adminUids にも自分を含める（設計書 5.1 / 7.1）
+    expect(payload.adminUids).toEqual(['test-uid'])
     expect(payload.mediaCount).toBe(0)
     expect(payload.title).toBe('夏休み')
     expect(payload.description).toBe('記録')
@@ -130,6 +133,7 @@ describe('lib/firestoreAlbum - createAlbum', () => {
     const keys = Object.keys(payload).sort()
     expect(keys).toEqual(
       [
+        'adminUids',
         'createdAt',
         'description',
         'mediaCount',

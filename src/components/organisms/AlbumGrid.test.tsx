@@ -24,6 +24,7 @@ function makeAlbum(id: string, title: string): Album {
     description: '',
     ownerId: 'u',
     memberUids: ['u'],
+    adminUids: ['u'],
     members: [member],
     mediaCount: 0,
     createdAt: { toMillis: () => 0 } as unknown as Album['createdAt'],

@@ -9,6 +9,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { useAlbum } from '@/hooks/useAlbum'
 import { useMediaList } from '@/hooks/useMediaList'
+import { useAcceptInvite } from '@/hooks/useAcceptInvite'
 import { AlbumDetailTemplate } from '@/components/templates/AlbumDetailTemplate'
 
 // 非メンバーアクセス時のメッセージ（基本設計書 8.1 #7）。
@@ -46,6 +47,11 @@ export default function AlbumDetailPage() {
   const { album, loading: albumLoading, notFound } = useAlbum(albumId)
   const { mediaItems, loading: mediaLoading } = useMediaList(albumId)
   const router = useRouter()
+
+  // 403判定の「前」に受諾処理を実行し、招待済みだが未受諾のユーザーを初回アクセスで
+  // 自動的にメンバー化する（基本設計書 6.7）。受諾の成否は useAlbum の再購読へ反映される。
+  // 受諾失敗は握りつぶされ、通常の権限判定（403/表示）を妨げない。
+  useAcceptInvite(albumId)
 
   // 認証確定後に未ログインなら /login へ誘導し、returnUrl に現在パスを保持する（基本設計書 7.4）。
   useEffect(() => {

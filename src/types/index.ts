@@ -16,6 +16,23 @@ export interface AlbumMember {
   canPost: boolean
   canManage: boolean
   joinedAt: Timestamp
+  // UI表示専用フラグ（基本設計書 5.1）。true の要素は「招待中（未受諾）」を表す。
+  // 権限管理画面が pendingInvites サブコレクションを AlbumMember 形へ変換した一時オブジェクトに
+  // のみ付与する。Firestore の members 配列に invited:true が保存されることはない。
+  invited?: boolean
+}
+
+// メール事前登録による招待の「正」（albums/{albumId}/pendingInvites/{email}、基本設計書 5.1）。
+// ドキュメントIDは正規化済みメール（.trim().toLowerCase()）とし、招待状態はこのサブコレクションで
+// 一元管理する。受諾時に members/memberUids へ転記し、このドキュメントを削除する（基本設計書 6.7）。
+export interface PendingInvite {
+  email: string
+  role: 'admin' | 'editor' | 'viewer'
+  canView: boolean
+  canPost: boolean
+  canManage: boolean
+  invitedBy: string
+  invitedAt: Timestamp
 }
 
 // アルバム。memberUids は Firestore の array-contains クエリ用（members とは別に保持し、
@@ -27,6 +44,11 @@ export interface Album {
   coverImageUrl?: string
   ownerId: string
   memberUids: string[]
+  // canManage:true のメンバー（owner/admin）UID を非正規化して保持する配列（基本設計書 5.1 / 7.1）。
+  // members 内で canManage===true の uid を常に反映する。Security Rules の isAlbumAdmin が
+  // `request.auth.uid in adminUids` の配列包含チェックで admin 判定できるよう memberUids と同様に別持ちする
+  // （List 型に exists(lambda) 相当のマクロが無いという Rules の制約を回避するため）。
+  adminUids: string[]
   members: AlbumMember[]
   mediaCount: number
   createdAt: Timestamp

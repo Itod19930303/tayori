@@ -34,6 +34,7 @@ function makeAlbum(overrides: Partial<Album> = {}): Album {
     description: '',
     ownerId: 'test-uid',
     memberUids: ['test-uid'],
+    adminUids: ['test-uid'],
     members: [makeMember('test-uid')],
     mediaCount: 0,
     createdAt: { toMillis: () => 0 } as unknown as Album['createdAt'],
