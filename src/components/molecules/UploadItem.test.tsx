@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { UploadItem, type UploadItemState } from './UploadItem'
+import { ERROR_MESSAGES } from '@/lib/messages/errorMessages'
 
 // UploadItem はアップロード進捗行の molecule（基本設計書 4.7）。
 // waiting/uploading/done/error/retrying の5状態のUI切り替えと、error行クリックでの
@@ -63,7 +64,7 @@ describe('components/molecules/UploadItem', () => {
       <UploadItem
         upload={makeUpload({
           status: 'error',
-          errorMessage: 'ネットワークが切断されました。タップして再試行してください。',
+          errorMessage: ERROR_MESSAGES.UPLOAD_NETWORK_FAILED,
         })}
       />
     )

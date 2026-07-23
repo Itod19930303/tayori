@@ -25,13 +25,8 @@ import {
 } from '@/components/templates/PermissionsTemplate'
 import type { PermissionField } from '@/components/molecules/MemberRow'
 import type { AlbumMember } from '@/types'
-
-// 非 canManage メンバーへの 403相当メッセージ（基本設計書 7.3 / 8.1 #7）。
-const FORBIDDEN_MESSAGE =
-  'このアルバムへのアクセス権がありません。管理者に招待を依頼してください。'
-// 保存/取り消し失敗時の共通文言（基本設計書 8.1 #6）。
-const SAVE_ERROR_MESSAGE = '保存に失敗しました。時間をおいて再試行してください。'
-const CANCEL_ERROR_MESSAGE = '取り消しに失敗しました。時間をおいて再試行してください。'
+import { ERROR_MESSAGES } from '@/lib/messages/errorMessages'
+import { SUCCESS_MESSAGES } from '@/lib/messages/successMessages'
 
 // 認証・データ確認中のフルスクリーンスピナー（ちらつき・誤判定防止、基本設計書 7.4）。
 function LoadingScreen() {
@@ -108,7 +103,7 @@ export default function PermissionsPage() {
     const next = !member[field]
     updateInvite(albumId, member.email, { [field]: next }).catch((error) => {
       console.error('招待の権限更新に失敗しました', error)
-      setMessage({ text: SAVE_ERROR_MESSAGE, tone: 'error' })
+      setMessage({ text: ERROR_MESSAGES.SAVE_FAILED, tone: 'error' })
     })
   }
 
@@ -116,7 +111,7 @@ export default function PermissionsPage() {
   const handleCancelInvite = (email: string) => {
     cancelInvite(albumId, email).catch((error) => {
       console.error('招待の取り消しに失敗しました', error)
-      setMessage({ text: CANCEL_ERROR_MESSAGE, tone: 'error' })
+      setMessage({ text: ERROR_MESSAGES.CANCEL_FAILED, tone: 'error' })
     })
   }
 
@@ -127,11 +122,11 @@ export default function PermissionsPage() {
     try {
       const memberUids = confirmedMembers.map((m) => m.uid)
       await updateAlbumMembers(albumId, confirmedMembers, memberUids)
-      setMessage({ text: '権限を保存しました', tone: 'success' })
+      setMessage({ text: SUCCESS_MESSAGES.PERMISSIONS_SAVED, tone: 'success' })
       setIsDirty(false)
     } catch (error) {
       console.error('権限の保存に失敗しました', error)
-      setMessage({ text: SAVE_ERROR_MESSAGE, tone: 'error' })
+      setMessage({ text: ERROR_MESSAGES.SAVE_FAILED, tone: 'error' })
     } finally {
       setIsSaving(false)
     }
@@ -142,11 +137,11 @@ export default function PermissionsPage() {
     if (!currentUser) return
     try {
       await createInvite(albumId, email, preset, currentUser)
-      setMessage({ text: '招待を登録しました', tone: 'success' })
+      setMessage({ text: SUCCESS_MESSAGES.INVITE_REGISTERED, tone: 'success' })
       setIsInviteOpen(false)
     } catch (error) {
       console.error('招待の登録に失敗しました', error)
-      setMessage({ text: SAVE_ERROR_MESSAGE, tone: 'error' })
+      setMessage({ text: ERROR_MESSAGES.SAVE_FAILED, tone: 'error' })
     }
   }
 
@@ -160,7 +155,7 @@ export default function PermissionsPage() {
   // canManage 権限が無いメンバー（editor/viewer）・非メンバーには 403相当を表示する（設計書7.3）。
   const myMember = album?.members?.find((m) => m.uid === currentUser.uid)
   if (!myMember?.canManage) {
-    return <NoticeScreen message={FORBIDDEN_MESSAGE} />
+    return <NoticeScreen message={ERROR_MESSAGES.FORBIDDEN} />
   }
 
   return (

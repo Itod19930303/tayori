@@ -3,6 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { User } from 'firebase/auth'
 import type { Album, Media } from '@/types'
+import { ERROR_MESSAGES } from '@/lib/messages/errorMessages'
 
 // メディアプレビュー単体画面（pages 層 / MediaPreviewPage、基本設計書 4.9 / 4.6 / 5.1 / 7.3 / 8.1 #7）。
 // useAuth でガード、useAlbum で memberUids 判定（403相当）、useMedia で mediaId 存在確認（404相当）し、
@@ -125,9 +126,7 @@ describe('app/albums/[albumId]/media/[mediaId]/page (MediaPreviewPage)', () => {
     albumState = { album: makeAlbum(['other-uid']), loading: false, notFound: false }
     render(<MediaPreviewPage />)
     expect(
-      screen.getByText(
-        'このアルバムへのアクセス権がありません。管理者に招待を依頼してください。'
-      )
+      screen.getByText(ERROR_MESSAGES.FORBIDDEN)
     ).toBeInTheDocument()
     expect(screen.queryByRole('img')).not.toBeInTheDocument()
     expect(document.querySelector('video')).toBeNull()

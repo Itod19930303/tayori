@@ -3,6 +3,7 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { AlbumMember } from '@/types'
 import { PermissionsTemplate } from './PermissionsTemplate'
+import { SUCCESS_MESSAGES } from '@/lib/messages/successMessages'
 
 // PermissionsTemplate は権限管理画面のレイアウト骨格（templates、実データ非保持・基本設計書 4.8）。
 // ヘッダー・PermissionTable・ActionRow・InviteModal を配置し、props を透過する。
@@ -84,7 +85,9 @@ describe('components/templates/PermissionsTemplate', () => {
   })
 
   it('PMT-04: message（成功/失敗）をインライン表示する', () => {
-    renderTemplate({ message: { text: '権限を保存しました', tone: 'success' } })
-    expect(screen.getByText('権限を保存しました')).toBeInTheDocument()
+    renderTemplate({
+      message: { text: SUCCESS_MESSAGES.PERMISSIONS_SAVED, tone: 'success' },
+    })
+    expect(screen.getByText(SUCCESS_MESSAGES.PERMISSIONS_SAVED)).toBeInTheDocument()
   })
 })

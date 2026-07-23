@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { ERROR_MESSAGES } from './messages/errorMessages'
 
 // auth.ts は Firebase Auth SDK の薄いラッパー。実ポップアップ/通信を避けるため
 // firebase/auth を完全モックし、成功/失敗の伝播とエラーコード→メッセージ変換を検証する。
@@ -83,27 +84,27 @@ describe('lib/auth', () => {
     it('AU-06: network-request-failed のメッセージ', async () => {
       const { getAuthErrorMessage } = await import('./auth')
       expect(getAuthErrorMessage('auth/network-request-failed')).toBe(
-        'ネットワーク接続を確認してください。'
+        ERROR_MESSAGES.AUTH_NETWORK_FAILED
       )
     })
 
     it('AU-07: too-many-requests のメッセージ', async () => {
       const { getAuthErrorMessage } = await import('./auth')
       expect(getAuthErrorMessage('auth/too-many-requests')).toBe(
-        'しばらく時間をおいてから再試行してください。'
+        ERROR_MESSAGES.AUTH_TOO_MANY_REQUESTS
       )
     })
 
     it('AU-08: 未知コードはデフォルトメッセージ', async () => {
       const { getAuthErrorMessage } = await import('./auth')
       expect(getAuthErrorMessage('auth/internal-error')).toBe(
-        'Googleログインに失敗しました。もう一度お試しください。'
+        ERROR_MESSAGES.AUTH_SIGNIN_FAILED
       )
     })
 
     it('AU-09: 空文字/undefined でもデフォルトへフォールバックし例外を投げない', async () => {
       const { getAuthErrorMessage } = await import('./auth')
-      const expected = 'Googleログインに失敗しました。もう一度お試しください。'
+      const expected = ERROR_MESSAGES.AUTH_SIGNIN_FAILED
       expect(getAuthErrorMessage('')).toBe(expected)
       expect(getAuthErrorMessage(undefined as unknown as string)).toBe(expected)
     })

@@ -9,9 +9,7 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { createAlbum, type CreateAlbumInput } from '@/lib/firestoreAlbum'
 import { NewAlbumTemplate } from '@/components/templates/NewAlbumTemplate'
-
-// Firestore 書き込み失敗時の表示メッセージ（基本設計書 8.1 #6 に統一）。
-const SAVE_ERROR_MESSAGE = '保存に失敗しました。時間をおいて再試行してください。'
+import { ERROR_MESSAGES } from '@/lib/messages/errorMessages'
 
 // 認証確認中のフルスクリーンスピナー（ちらつき防止、基本設計書 7.4）。
 function LoadingScreen() {
@@ -52,7 +50,7 @@ export default function NewAlbumPage() {
       // 利用者へは共通メッセージのみ表示し、実際の原因（Security Rules拒否等）は
       // コンソールで切り分けられるようにログへ残す。
       console.error('アルバム作成に失敗しました', err)
-      setError(SAVE_ERROR_MESSAGE)
+      setError(ERROR_MESSAGES.SAVE_FAILED)
       setIsSubmitting(false)
     }
   }

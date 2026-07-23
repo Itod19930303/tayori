@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { User } from 'firebase/auth'
+import { ERROR_MESSAGES } from '@/lib/messages/errorMessages'
 
 // アルバム作成ページ（pages 層）。useAuth でガードし、onSubmit で createAlbum を呼ぶ。
 // createAlbum / useAuth / next/navigation をモックし、送信成功時の push・失敗時のエラー表示・
@@ -76,7 +77,7 @@ describe('app/albums/new/page (アルバム作成)', () => {
     await fillTitleAndSave()
     await waitFor(() =>
       expect(screen.getByRole('alert')).toHaveTextContent(
-        '保存に失敗しました。時間をおいて再試行してください。'
+        ERROR_MESSAGES.SAVE_FAILED
       )
     )
     expect(push).not.toHaveBeenCalled()
@@ -102,7 +103,7 @@ describe('app/albums/new/page (アルバム作成)', () => {
   it('NAP-05: タイトル未入力ではクライアントバリデーションで止まり createAlbum を呼ばない', async () => {
     render(<NewAlbumPage />)
     await userEvent.click(screen.getByRole('button', { name: /保存/ }))
-    expect(screen.getByRole('alert')).toHaveTextContent('アルバム名を入力してください')
+    expect(screen.getByRole('alert')).toHaveTextContent(ERROR_MESSAGES.TITLE_REQUIRED)
     expect(createAlbum).not.toHaveBeenCalled()
     expect(push).not.toHaveBeenCalled()
   })

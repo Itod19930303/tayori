@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { InviteModal } from './InviteModal'
+import { SUCCESS_MESSAGES } from '@/lib/messages/successMessages'
 
 // InviteModal は2導線（URLコピー / メール招待）の招待モーダル（molecules、基本設計書 4.8）。
 // props（open / albumId / onInvite / onClose）のみで完結し、Firestore へ直接アクセスしない。
@@ -25,7 +26,7 @@ describe('components/molecules/InviteModal', () => {
     expect(writeText).toHaveBeenCalledWith(
       'https://tayori.example.com/albums/album-1'
     )
-    expect(screen.getByText('リンクをコピーしました')).toBeInTheDocument()
+    expect(screen.getByText(SUCCESS_MESSAGES.LINK_COPIED)).toBeInTheDocument()
   })
 
   it('IM-02: メール招待で onInvite(正規化メール, preset) を呼ぶ', async () => {

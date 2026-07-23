@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { AlbumCreateForm } from './AlbumCreateForm'
+import { ERROR_MESSAGES } from '@/lib/messages/errorMessages'
 
 // AlbumCreateForm は molecules（props のみで完結）。タイトル/説明入力・文字数カウンター・
 // クライアントバリデーション・二重送信防止・サーバーエラー表示を検証する（基本設計書 4.5）。
@@ -26,7 +27,7 @@ describe('components/molecules/AlbumCreateForm', () => {
     const onSubmit = vi.fn()
     render(<AlbumCreateForm onSubmit={onSubmit} isSubmitting={false} error={null} />)
     await userEvent.click(screen.getByRole('button', { name: /保存/ }))
-    expect(screen.getByRole('alert')).toHaveTextContent('アルバム名を入力してください')
+    expect(screen.getByRole('alert')).toHaveTextContent(ERROR_MESSAGES.TITLE_REQUIRED)
     expect(onSubmit).not.toHaveBeenCalled()
   })
 
@@ -85,11 +86,11 @@ describe('components/molecules/AlbumCreateForm', () => {
       <AlbumCreateForm
         onSubmit={vi.fn()}
         isSubmitting={false}
-        error="保存に失敗しました。時間をおいて再試行してください。"
+        error={ERROR_MESSAGES.SAVE_FAILED}
       />
     )
     expect(screen.getByRole('alert')).toHaveTextContent(
-      '保存に失敗しました。時間をおいて再試行してください。'
+      ERROR_MESSAGES.SAVE_FAILED
     )
   })
 

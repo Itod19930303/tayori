@@ -4,6 +4,7 @@
 // page 層の state 操作。atomic-design.md）。確定前（pending）行が選択されているときのみ
 // 「選択項目を削除」バーを出し、全件が done のとき完了バナーを出す。
 import { UploadItem, type UploadItemState } from '@/components/molecules/UploadItem'
+import { SUCCESS_MESSAGES } from '@/lib/messages/successMessages'
 
 export interface UploadListProps {
   uploads: UploadItemState[]
@@ -38,7 +39,7 @@ export function UploadList({
           role="status"
           className="rounded-lg bg-primary-fixed p-stack-md font-label-md text-label-md text-on-surface"
         >
-          {total}件の思い出を保存しました
+          {SUCCESS_MESSAGES.MEDIA_SAVED(total)}
         </div>
       )}
 

@@ -13,10 +13,7 @@ import { uploadFile } from '@/lib/uploadFile'
 import { createMediaDoc } from '@/lib/firestoreMedia'
 import { UploadTemplate, type FileValidationError } from '@/components/templates/UploadTemplate'
 import type { UploadItemState } from '@/components/molecules/UploadItem'
-
-// アップロード中のネットワーク切断時に表示するメッセージ（基本設計書 8.1 #3）。
-const NETWORK_ERROR_MESSAGE =
-  'ネットワークが切断されました。タップして再試行してください。'
+import { ERROR_MESSAGES } from '@/lib/messages/errorMessages'
 
 // 認証・データ確認中のフルスクリーンスピナー（ちらつき防止、基本設計書 7.4）。
 function LoadingScreen() {
@@ -120,7 +117,10 @@ export default function UploadPage() {
     } catch (error) {
       // 実際の原因（Storage/Firestore失敗）はコンソールで切り分けられるようログへ残す。
       console.error('アップロードに失敗しました', error)
-      updateItem(key, { status: 'error', errorMessage: NETWORK_ERROR_MESSAGE })
+      updateItem(key, {
+        status: 'error',
+        errorMessage: ERROR_MESSAGES.UPLOAD_NETWORK_FAILED,
+      })
     }
   }
 
@@ -222,7 +222,7 @@ export default function UploadPage() {
   // 投稿権限（canPost）が無いメンバーにはアップロードUIを出さない（設計書7.3）。
   const myMember = album?.members?.find((m) => m.uid === currentUser.uid)
   if (!myMember?.canPost) {
-    return <NoticeScreen message="投稿権限がありません。" />
+    return <NoticeScreen message={ERROR_MESSAGES.POST_FORBIDDEN} />
   }
 
   return (

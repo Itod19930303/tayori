@@ -3,6 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { User } from 'firebase/auth'
 import type { Album, Media } from '@/types'
+import { ERROR_MESSAGES } from '@/lib/messages/errorMessages'
 
 // アルバム詳細ページ（pages 層）。useAuth でガード、useAlbum で存在確認・メンバー判定、
 // useMediaList でメディア取得し AlbumDetailTemplate へ委譲する（基本設計書 4.6 / 8.1 #7）。
@@ -96,9 +97,7 @@ describe('app/albums/[albumId]/page (アルバム詳細)', () => {
     }
     render(<AlbumDetailPage />)
     expect(
-      screen.getByText(
-        'このアルバムへのアクセス権がありません。管理者に招待を依頼してください。'
-      )
+      screen.getByText(ERROR_MESSAGES.FORBIDDEN)
     ).toBeInTheDocument()
     expect(screen.queryByRole('img')).not.toBeInTheDocument()
   })
@@ -156,9 +155,7 @@ describe('app/albums/[albumId]/page (アルバム詳細)', () => {
     render(<AlbumDetailPage />)
     expect(useAcceptInvite).toHaveBeenCalledWith('album-1')
     expect(
-      screen.getByText(
-        'このアルバムへのアクセス権がありません。管理者に招待を依頼してください。'
-      )
+      screen.getByText(ERROR_MESSAGES.FORBIDDEN)
     ).toBeInTheDocument()
     expect(screen.queryByRole('img')).not.toBeInTheDocument()
   })

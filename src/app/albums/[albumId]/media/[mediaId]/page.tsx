@@ -13,14 +13,7 @@ import { useAlbum } from '@/hooks/useAlbum'
 import { useMedia } from '@/hooks/useMedia'
 import { getPreviewUrl } from '@/lib/mediaUrl'
 import type { Media } from '@/types'
-
-// 非メンバーアクセス時のメッセージ（基本設計書 8.1 #7、アルバム詳細ページと統一）。
-const FORBIDDEN_MESSAGE =
-  'このアルバムへのアクセス権がありません。管理者に招待を依頼してください。'
-// メディア不在時のメッセージ（404相当。403文言と区別してユーザーに原因を伝える）。
-const MEDIA_NOT_FOUND_MESSAGE = 'メディアが見つかりません。'
-// アルバム不在時のメッセージ（親アルバム自体が存在しない場合の404相当）。
-const ALBUM_NOT_FOUND_MESSAGE = 'アルバムが見つかりません。'
+import { ERROR_MESSAGES } from '@/lib/messages/errorMessages'
 
 // 認証・データ確認中のフルスクリーンスピナー（ちらつき・誤判定防止、基本設計書 7.4）。
 function LoadingScreen() {
@@ -85,7 +78,7 @@ function MediaViewer({ media }: { media: Media }) {
         className="max-h-full max-w-full object-contain"
       >
         {/* 動画非対応環境向けの代替テキスト。字幕トラックは MVP 対象外。 */}
-        お使いのブラウザは動画再生に対応していません。
+        {ERROR_MESSAGES.VIDEO_NOT_SUPPORTED}
       </video>
     )
   }
@@ -97,7 +90,7 @@ function MediaViewer({ media }: { media: Media }) {
         draft
       </span>
       <p className="font-body-md text-body-md">
-        このファイルはプレビューに対応していません。ダウンロードしてご確認ください。
+        {ERROR_MESSAGES.MEDIA_PREVIEW_UNSUPPORTED}
       </p>
     </div>
   )
@@ -138,17 +131,17 @@ export default function MediaPreviewPage() {
 
   // 親アルバムが存在しない場合は404相当を表示する。
   if (albumNotFound || !album) {
-    return <NoticeScreen message={ALBUM_NOT_FOUND_MESSAGE} />
+    return <NoticeScreen message={ERROR_MESSAGES.ALBUM_NOT_FOUND} />
   }
 
   // 非メンバーは403相当を表示する（memberUids で判定、アルバム詳細と統一。設計書4.9 アクセス条件）。
   if (!album.memberUids?.includes(currentUser.uid)) {
-    return <NoticeScreen message={FORBIDDEN_MESSAGE} />
+    return <NoticeScreen message={ERROR_MESSAGES.FORBIDDEN} />
   }
 
   // 対象メディアが存在しない場合は404相当を表示する（403文言とは区別する）。
   if (mediaNotFound || !media) {
-    return <NoticeScreen message={MEDIA_NOT_FOUND_MESSAGE} />
+    return <NoticeScreen message={ERROR_MESSAGES.MEDIA_NOT_FOUND} />
   }
 
   const uploaderInitial = media.uploaderName?.charAt(0) ?? '?'
