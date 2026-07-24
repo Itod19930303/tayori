@@ -25,12 +25,16 @@ let mediaState: { mediaItems: Media[]; loading: boolean } = {
 const push = vi.fn()
 const replace = vi.fn()
 const useAcceptInvite = vi.fn()
+const signOutUser = vi.fn()
 
 vi.mock('@/hooks/useAuth', () => ({ useAuth: () => authState }))
 vi.mock('@/hooks/useAlbum', () => ({ useAlbum: () => albumState }))
 vi.mock('@/hooks/useMediaList', () => ({ useMediaList: () => mediaState }))
 vi.mock('@/hooks/useAcceptInvite', () => ({
   useAcceptInvite: (...args: unknown[]) => useAcceptInvite(...args),
+}))
+vi.mock('@/lib/auth', () => ({
+  signOutUser: (...args: unknown[]) => signOutUser(...args),
 }))
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push, replace }),
@@ -198,5 +202,51 @@ describe('app/albums/[albumId]/page (アルバム詳細)', () => {
     expect(
       screen.queryByRole('button', { name: /権限管理/ })
     ).not.toBeInTheDocument()
+  })
+
+  // --- 403/404 通知画面でも共通ヘッダー（ログアウト手段）が提供されること（CodeRabbit Major指摘）---
+  it('ADP-14: 非メンバー403相当でも TopHeader のログアウトボタンが表示され機能する', async () => {
+    signOutUser.mockResolvedValue(undefined)
+    albumState = { album: makeAlbum(['other-uid']), loading: false, notFound: false }
+    render(<AlbumDetailPage />)
+    expect(screen.getByText(ERROR_MESSAGES.FORBIDDEN)).toBeInTheDocument()
+    const btn = screen.getByRole('button', { name: /ログアウト/ })
+    expect(btn).toBeInTheDocument()
+    await userEvent.click(btn)
+    expect(signOutUser).toHaveBeenCalledTimes(1)
+  })
+
+  it('ADP-15: アルバム不在404相当でも TopHeader のログアウトボタンが表示される', () => {
+    albumState = { album: null, loading: false, notFound: true }
+    render(<AlbumDetailPage />)
+    expect(screen.getByText(/アルバムが見つかりません/)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /ログアウト/ })).toBeInTheDocument()
+  })
+
+  // --- 共通ヘッダーのログアウトハンドラ（テスト仕様書 §5.45 LGH-DETAIL）---
+  it('LGH-DETAIL-01: ログアウト押下で signOutUser が1回呼ばれる', async () => {
+    signOutUser.mockResolvedValue(undefined)
+    render(<AlbumDetailPage />)
+    await userEvent.click(screen.getByRole('button', { name: /ログアウト/ }))
+    expect(signOutUser).toHaveBeenCalledTimes(1)
+  })
+
+  it('LGH-DETAIL-02: ログアウト成功で router.push("/login") を呼ぶ', async () => {
+    signOutUser.mockResolvedValue(undefined)
+    render(<AlbumDetailPage />)
+    await userEvent.click(screen.getByRole('button', { name: /ログアウト/ }))
+    await waitFor(() => expect(push).toHaveBeenCalledWith('/login'))
+  })
+
+  it('LGH-DETAIL-03: ログアウト失敗時は遷移せず LOGOUT_FAILED を表示する', async () => {
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    signOutUser.mockRejectedValue(new Error('signout failed'))
+    render(<AlbumDetailPage />)
+    await userEvent.click(screen.getByRole('button', { name: /ログアウト/ }))
+    await waitFor(() =>
+      expect(screen.getByText(ERROR_MESSAGES.LOGOUT_FAILED)).toBeInTheDocument()
+    )
+    expect(push).not.toHaveBeenCalledWith('/login')
+    consoleErrorSpy.mockRestore()
   })
 })

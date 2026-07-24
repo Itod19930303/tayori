@@ -10,7 +10,10 @@ import { useAuth } from '@/hooks/useAuth'
 import { useAlbum } from '@/hooks/useAlbum'
 import { useMediaList } from '@/hooks/useMediaList'
 import { useAcceptInvite } from '@/hooks/useAcceptInvite'
+import { useLogout } from '@/hooks/useLogout'
 import { AlbumDetailTemplate } from '@/components/templates/AlbumDetailTemplate'
+import { AuthedShell } from '@/components/organisms/AuthedShell'
+import { NoticeScreen } from '@/components/molecules/NoticeScreen'
 import { ERROR_MESSAGES } from '@/lib/messages/errorMessages'
 
 // 認証・データ確認中のフルスクリーンスピナー（ちらつき防止、基本設計書 7.4）。
@@ -26,23 +29,13 @@ function LoadingScreen() {
   )
 }
 
-// 403/404 相当の中央メッセージ表示（専用ページの簡易版）。
-function NoticeScreen({ message }: { message: string }) {
-  return (
-    <div className="flex min-h-screen flex-1 items-center justify-center bg-background px-margin-mobile text-center">
-      <p className="font-body-md text-body-md text-on-surface-variant">
-        {message}
-      </p>
-    </div>
-  )
-}
-
 export default function AlbumDetailPage() {
   const params = useParams()
   const albumId = params.albumId as string
   const { currentUser, loading: authLoading } = useAuth()
   const { album, loading: albumLoading, notFound } = useAlbum(albumId)
   const { mediaItems, loading: mediaLoading } = useMediaList(albumId)
+  const { handleLogout, logoutError } = useLogout()
   const router = useRouter()
 
   // 403判定の「前」に受諾処理を実行し、招待済みだが未受諾のユーザーを初回アクセスで
@@ -67,14 +60,32 @@ export default function AlbumDetailPage() {
     return null
   }
 
+  // 以降のエラー通知（403/404）も AuthedShell 内で表示し、ログイン済みユーザーが
+  // アクセスできない場合でも共通ヘッダー（ログアウト導線）を維持する（CodeRabbit Major指摘）。
   // 存在しないアルバムは404相当を表示する（notFound と権限エラーを区別）。
   if (notFound || !album) {
-    return <NoticeScreen message={ERROR_MESSAGES.ALBUM_NOT_FOUND} />
+    return (
+      <AuthedShell
+        currentUser={currentUser}
+        onLogoutClick={handleLogout}
+        logoutError={logoutError}
+      >
+        <NoticeScreen message={ERROR_MESSAGES.ALBUM_NOT_FOUND} />
+      </AuthedShell>
+    )
   }
 
   // 非メンバーは403相当を表示する（memberUids で判定、設計書7.1 isAlbumMember と一致）。
   if (!album.memberUids?.includes(currentUser.uid)) {
-    return <NoticeScreen message={ERROR_MESSAGES.FORBIDDEN} />
+    return (
+      <AuthedShell
+        currentUser={currentUser}
+        onLogoutClick={handleLogout}
+        logoutError={logoutError}
+      >
+        <NoticeScreen message={ERROR_MESSAGES.FORBIDDEN} />
+      </AuthedShell>
+    )
   }
 
   // 「権限管理」リンクの表示判定（基本設計書 4.6）。ログインユーザー自身のメンバー情報を
@@ -83,19 +94,27 @@ export default function AlbumDetailPage() {
   const myMember = album.members?.find((m) => m.uid === currentUser.uid)
   const canManage = myMember?.canManage === true
 
+  // TopHeader を最上部の共通バーとして配置し、既存のページヘッダー（アルバム名・各種リンク）は
+  // その下段に維持する（設計書 4.10）。
   return (
-    <AlbumDetailTemplate
-      album={album}
-      mediaItems={mediaItems}
-      loading={mediaLoading}
-      onUploadClick={() => router.push(`/albums/${albumId}/upload`)}
-      onSelectMedia={(media) =>
-        router.push(`/albums/${albumId}/media/${media.mediaId}`)
-      }
-      canManage={canManage}
-      onManagePermissionsClick={() =>
-        router.push(`/albums/${albumId}/permissions`)
-      }
-    />
+    <AuthedShell
+      currentUser={currentUser}
+      onLogoutClick={handleLogout}
+      logoutError={logoutError}
+    >
+      <AlbumDetailTemplate
+        album={album}
+        mediaItems={mediaItems}
+        loading={mediaLoading}
+        onUploadClick={() => router.push(`/albums/${albumId}/upload`)}
+        onSelectMedia={(media) =>
+          router.push(`/albums/${albumId}/media/${media.mediaId}`)
+        }
+        canManage={canManage}
+        onManagePermissionsClick={() =>
+          router.push(`/albums/${albumId}/permissions`)
+        }
+      />
+    </AuthedShell>
   )
 }

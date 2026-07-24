@@ -1,10 +1,12 @@
-// UploadItem を並べ、全体進捗（完了数/総数）・選択操作バー・全件完了バナーを表示する
+// UploadItem を並べ、全体進捗（完了数/総数）・選択操作バーを表示する
 // organism（基本設計書 4.7）。props（uploads / onRetry / onToggleSelect / onDeleteSelected）
 // のみで完結し、Storage へ直接アクセスしない（アップロード実処理・確定前削除はいずれも
 // page 層の state 操作。atomic-design.md）。確定前（pending）行が選択されているときのみ
-// 「選択項目を削除」バーを出し、全件が done のとき完了バナーを出す。
+// 「選択項目を削除」バーを出す。
+// v2.5: 全件完了時の完了フィードバックは UploadTemplate 配置の完了モーダル（UploadCompleteModal）へ
+// 移設したため、本 organism からは完了バナー・戻る導線を持たない。全件 done 時に全体進捗を出さない
+// 挙動のみ維持する（allDone は進捗の非表示判定にのみ用いる）。
 import { UploadItem, type UploadItemState } from '@/components/molecules/UploadItem'
-import { SUCCESS_MESSAGES } from '@/lib/messages/successMessages'
 
 export interface UploadListProps {
   uploads: UploadItemState[]
@@ -28,21 +30,11 @@ export function UploadList({
   const selectedCount = uploads.filter(
     (u) => u.status === 'pending' && u.selected
   ).length
-  // 全件が done のときのみ完了バナーを出す（1件でも未完了が残る間は出さない。設計書4.7）。
+  // 全件が done のとき全体進捗を非表示にするための判定（完了フィードバックは完了モーダルが担う）。
   const allDone = total > 0 && uploads.every((u) => u.status === 'done')
 
   return (
     <div className="flex flex-col gap-stack-md">
-      {/* 全件完了バナー（成功トーン）。全体進捗の位置に表示する（設計書4.7）。 */}
-      {allDone && (
-        <div
-          role="status"
-          className="rounded-lg bg-primary-fixed p-stack-md font-label-md text-label-md text-on-surface"
-        >
-          {SUCCESS_MESSAGES.MEDIA_SAVED(total)}
-        </div>
-      )}
-
       {/* 全体進捗（完了数/総数）。対象が無い・全件完了時は表示しない。 */}
       {total > 0 && !allDone && (
         <p className="font-label-md text-label-md text-on-surface-variant">

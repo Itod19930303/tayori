@@ -8,10 +8,12 @@ import { useEffect, useRef, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { useAlbum } from '@/hooks/useAlbum'
+import { useLogout } from '@/hooks/useLogout'
 import { validateMediaFile } from '@/lib/validators'
 import { uploadFile } from '@/lib/uploadFile'
 import { createMediaDoc } from '@/lib/firestoreMedia'
 import { UploadTemplate, type FileValidationError } from '@/components/templates/UploadTemplate'
+import { TopHeader } from '@/components/organisms/TopHeader'
 import type { UploadItemState } from '@/components/molecules/UploadItem'
 import { ERROR_MESSAGES } from '@/lib/messages/errorMessages'
 
@@ -44,6 +46,7 @@ export default function UploadPage() {
   const albumId = params.albumId as string
   const { currentUser, loading: authLoading } = useAuth()
   const { album, loading: albumLoading } = useAlbum(albumId)
+  const { handleLogout, logoutError } = useLogout()
   const router = useRouter()
 
   const [uploads, setUploads] = useState<UploadItemState[]>([])
@@ -201,6 +204,23 @@ export default function UploadPage() {
     void runUpload(item.file, key, true)
   }
 
+  // ヘッダー戻るリンク & 完了モーダル「戻る」の遷移先。permissions/page.tsx の onBack と同一パターンで
+  // 遷移先は /albums/${albumId} 固定（設計書4.7 戻る導線の仕様）。
+  const handleBack = () => {
+    router.push(`/albums/${albumId}`)
+  }
+
+  // 完了モーダル「続けてアップロードする」。uploads を空配列へリセットし、ファイル再選択可能な初期状態へ戻す
+  // （allDone が false になり完了モーダルは自動的に閉じる）。同時に確定前行の previewUrl を解放し
+  // fileErrors をクリアして、メモリリークと古いエラー残留を防ぐ（設計書4.7 v2.5 / 6.3）。
+  const handleResetUploads = () => {
+    uploads.forEach((u) => {
+      if (u.previewUrl) URL.revokeObjectURL(u.previewUrl)
+    })
+    setUploads([])
+    setFileErrors([])
+  }
+
   // 保存ボタン活性条件: 確定前（pending）行が1件以上あること（設計書4.7）。
   const canSave = uploads.some((u) => u.status === 'pending')
 
@@ -225,17 +245,33 @@ export default function UploadPage() {
     return <NoticeScreen message={ERROR_MESSAGES.POST_FORBIDDEN} />
   }
 
+  // TopHeader を最上部の共通バーとして配置し、既存のページヘッダー（戻る導線・見出し）は
+  // その下段に維持する（設計書 4.10）。
   return (
-    <UploadTemplate
-      uploads={uploads}
-      onSelectFiles={handleSelectFiles}
-      onSave={handleSave}
-      canSave={canSave}
-      onRetry={handleRetry}
-      onToggleSelect={handleToggleSelect}
-      onDeleteSelected={handleDeleteSelected}
-      fileErrors={fileErrors}
-      albumName={album?.title}
-    />
+    <div className="flex min-h-screen flex-1 flex-col bg-background">
+      <TopHeader currentUser={currentUser} onLogoutClick={handleLogout} />
+      {logoutError && (
+        <p
+          role="alert"
+          aria-live="assertive"
+          className="bg-error-container px-margin-mobile py-stack-sm text-center font-body-md text-body-md text-error md:px-margin-desktop"
+        >
+          {logoutError}
+        </p>
+      )}
+      <UploadTemplate
+        uploads={uploads}
+        onSelectFiles={handleSelectFiles}
+        onSave={handleSave}
+        canSave={canSave}
+        onRetry={handleRetry}
+        onToggleSelect={handleToggleSelect}
+        onDeleteSelected={handleDeleteSelected}
+        fileErrors={fileErrors}
+        onBack={handleBack}
+        onResetUploads={handleResetUploads}
+        albumName={album?.title}
+      />
+    </div>
   )
 }

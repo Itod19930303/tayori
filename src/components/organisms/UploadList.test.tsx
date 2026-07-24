@@ -133,7 +133,7 @@ describe('components/organisms/UploadList', () => {
     expect(onToggleSelect).toHaveBeenCalledWith('a')
   })
 
-  it('UL-11: albumName を UploadItem へ透過し done 行に「保存済み · アルバム名」を表示する', () => {
+  it('UL-14: albumName を UploadItem へ透過し done 行に「保存済み · アルバム名」を表示する', () => {
     render(
       <UploadList
         uploads={[makeUpload('a', 'done')]}
@@ -143,6 +143,52 @@ describe('components/organisms/UploadList', () => {
     expect(
       screen.getByText('保存済み · 湖畔で過ごした夏休み')
     ).toBeInTheDocument()
+  })
+
+  it('UL-11: 全件 done でも完了バナー・「アルバムに戻る」導線を描画しない（v2.5で完了モーダルへ移設）', () => {
+    render(
+      <UploadList uploads={[makeUpload('a', 'done'), makeUpload('b', 'done')]} />
+    )
+    // 完了バナー文言（MEDIA_SAVED）と「アルバムに戻る」導線が UploadList 内に無い
+    expect(screen.queryByText(/思い出を保存しました/)).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: /に戻る/ })
+    ).not.toBeInTheDocument()
+  })
+
+  it('UL-12: 全件 done のとき全体進捗「N個中N個完了」を表示しない', () => {
+    render(
+      <UploadList
+        uploads={[
+          makeUpload('a', 'done'),
+          makeUpload('b', 'done'),
+          makeUpload('c', 'done'),
+        ]}
+      />
+    )
+    expect(screen.queryByText(/個完了/)).not.toBeInTheDocument()
+  })
+
+  it('UL-13: onBack prop 廃止後も従来 props のみで正常描画する', () => {
+    // onBack を渡さず（型からも除去済み）、各status混在で例外なく描画される
+    render(
+      <UploadList
+        uploads={[
+          makeUpload('a', 'pending', { selected: false }),
+          makeUpload('b', 'uploading'),
+          makeUpload('c', 'done'),
+          makeUpload('d', 'error', { errorMessage: 'x' }),
+        ]}
+        onRetry={vi.fn()}
+        onToggleSelect={vi.fn()}
+        onDeleteSelected={vi.fn()}
+        albumName="家族旅行"
+      />
+    )
+    expect(screen.getByText('a.jpg')).toBeInTheDocument()
+    expect(screen.getByText('b.jpg')).toBeInTheDocument()
+    expect(screen.getByText('c.jpg')).toBeInTheDocument()
+    expect(screen.getByText('d.jpg')).toBeInTheDocument()
   })
 
   it('UL-10: 全件が pending 以外（保存後）のとき選択操作バーを出さない', () => {

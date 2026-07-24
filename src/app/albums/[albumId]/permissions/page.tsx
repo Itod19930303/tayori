@@ -12,6 +12,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { useAlbum } from '@/hooks/useAlbum'
 import { usePendingInvites } from '@/hooks/usePendingInvites'
 import { useAcceptInvite } from '@/hooks/useAcceptInvite'
+import { useLogout } from '@/hooks/useLogout'
 import {
   createInvite,
   cancelInvite,
@@ -24,6 +25,8 @@ import {
   type InlineMessage,
 } from '@/components/templates/PermissionsTemplate'
 import type { PermissionField } from '@/components/molecules/MemberRow'
+import { AuthedShell } from '@/components/organisms/AuthedShell'
+import { NoticeScreen } from '@/components/molecules/NoticeScreen'
 import type { AlbumMember } from '@/types'
 import { ERROR_MESSAGES } from '@/lib/messages/errorMessages'
 import { SUCCESS_MESSAGES } from '@/lib/messages/successMessages'
@@ -41,21 +44,13 @@ function LoadingScreen() {
   )
 }
 
-// 403相当の中央メッセージ表示（upload/detail ページと同一パターン）。
-function NoticeScreen({ message }: { message: string }) {
-  return (
-    <div className="flex min-h-screen flex-1 items-center justify-center bg-background px-margin-mobile text-center">
-      <p className="font-body-md text-body-md text-on-surface-variant">{message}</p>
-    </div>
-  )
-}
-
 export default function PermissionsPage() {
   const params = useParams()
   const albumId = params.albumId as string
   const { currentUser, loading: authLoading } = useAuth()
   const { album, loading: albumLoading } = useAlbum(albumId)
   const { invites } = usePendingInvites(albumId)
+  const { handleLogout, logoutError } = useLogout()
   const router = useRouter()
 
   // 403判定の「前」に受諾処理を実行し、招待済みユーザーを自動的にメンバー化する（設計書6.7）。
@@ -153,28 +148,46 @@ export default function PermissionsPage() {
   if (albumLoading) return <LoadingScreen />
 
   // canManage 権限が無いメンバー（editor/viewer）・非メンバーには 403相当を表示する（設計書7.3）。
+  // 403通知も AuthedShell 内で表示し、ログイン済みユーザーが権限を持たない場合でも
+  // 共通ヘッダー（ログアウト導線）を維持する（CodeRabbit Major指摘）。
   const myMember = album?.members?.find((m) => m.uid === currentUser.uid)
   if (!myMember?.canManage) {
-    return <NoticeScreen message={ERROR_MESSAGES.FORBIDDEN} />
+    return (
+      <AuthedShell
+        currentUser={currentUser}
+        onLogoutClick={handleLogout}
+        logoutError={logoutError}
+      >
+        <NoticeScreen message={ERROR_MESSAGES.FORBIDDEN} />
+      </AuthedShell>
+    )
   }
 
+  // TopHeader を最上部の共通バーとして配置し、既存のページヘッダー（戻る導線・見出し）は
+  // その下段に維持する（設計書 4.10）。
   return (
-    <PermissionsTemplate
-      albumTitle={album?.title ?? ''}
-      albumId={albumId}
-      members={displayMembers}
-      onToggle={handleToggle}
-      onChangePreset={handleChangePreset}
-      onCancelInvite={handleCancelInvite}
-      onSave={handleSave}
-      isDirty={isDirty}
-      isSaving={isSaving}
-      isInviteOpen={isInviteOpen}
-      onInviteOpen={() => setIsInviteOpen(true)}
-      onInviteClose={() => setIsInviteOpen(false)}
-      onInvite={handleInvite}
-      message={message}
-      onBack={() => router.push(`/albums/${albumId}`)}
-    />
+    <AuthedShell
+      currentUser={currentUser}
+      onLogoutClick={handleLogout}
+      logoutError={logoutError}
+    >
+      <PermissionsTemplate
+        albumTitle={album?.title ?? ''}
+        albumId={albumId}
+        members={displayMembers}
+        onToggle={handleToggle}
+        onChangePreset={handleChangePreset}
+        onCancelInvite={handleCancelInvite}
+        onSave={handleSave}
+        isDirty={isDirty}
+        isSaving={isSaving}
+        isInviteOpen={isInviteOpen}
+        onInviteOpen={() => setIsInviteOpen(true)}
+        onInviteClose={() => setIsInviteOpen(false)}
+        onInvite={handleInvite}
+        message={message}
+        onBack={() => router.push(`/albums/${albumId}`)}
+      />
+    </AuthedShell>
   )
 }

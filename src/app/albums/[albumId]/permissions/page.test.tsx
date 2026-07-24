@@ -30,6 +30,7 @@ const createInvite = vi.fn()
 const cancelInvite = vi.fn()
 const updateInvite = vi.fn()
 const updateAlbumMembers = vi.fn()
+const signOutUser = vi.fn()
 
 vi.mock('@/hooks/useAuth', () => ({ useAuth: () => authState }))
 vi.mock('@/hooks/useAlbum', () => ({ useAlbum: () => albumState }))
@@ -44,6 +45,9 @@ vi.mock('@/lib/firestorePermissions', () => ({
   cancelInvite: (...args: unknown[]) => cancelInvite(...args),
   updateInvite: (...args: unknown[]) => updateInvite(...args),
   updateAlbumMembers: (...args: unknown[]) => updateAlbumMembers(...args),
+}))
+vi.mock('@/lib/auth', () => ({
+  signOutUser: (...args: unknown[]) => signOutUser(...args),
 }))
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push, replace }),
@@ -123,7 +127,9 @@ describe('app/albums/[albumId]/permissions/page (権限管理)', () => {
   it('PP-01: canManage メンバーで権限管理UI（メンバー行 + 招待中行）が表示される', () => {
     render(<PermissionsPage />)
     expect(screen.getByText('アルバムの閲覧権限')).toBeInTheDocument()
-    expect(screen.getByText('テスト太郎')).toBeInTheDocument()
+    // 「テスト太郎」は TopHeader（共通ヘッダー）とメンバー行の2箇所に表示される（テスト仕様書 §5.45 回帰注記）。
+    // メンバー行が描画されていることを、ヘッダー分を含む2件表示で確認する。
+    expect(screen.getAllByText('テスト太郎')).toHaveLength(2)
     expect(screen.getByText('invitee@example.com')).toBeInTheDocument()
     expect(screen.getByText('招待中')).toBeInTheDocument()
     expect(replace).not.toHaveBeenCalled()
@@ -260,5 +266,48 @@ describe('app/albums/[albumId]/permissions/page (権限管理)', () => {
     render(<PermissionsPage />)
     await userEvent.click(screen.getByRole('button', { name: /に戻る/ }))
     expect(push).toHaveBeenCalledWith('/albums/album-1')
+  })
+
+  // --- 403 通知画面でも共通ヘッダー（ログアウト手段）が提供されること（CodeRabbit Major指摘）---
+  it('PP-15: canManage=false の403相当でも TopHeader のログアウトボタンが表示され機能する', async () => {
+    signOutUser.mockResolvedValue(undefined)
+    albumState = {
+      album: makeAlbum([{ ...ownerMe, role: 'viewer', canManage: false }]),
+      loading: false,
+      notFound: false,
+    }
+    render(<PermissionsPage />)
+    expect(screen.getByText(ERROR_MESSAGES.FORBIDDEN)).toBeInTheDocument()
+    const btn = screen.getByRole('button', { name: /ログアウト/ })
+    expect(btn).toBeInTheDocument()
+    await userEvent.click(btn)
+    expect(signOutUser).toHaveBeenCalledTimes(1)
+  })
+
+  // --- 共通ヘッダーのログアウトハンドラ（テスト仕様書 §5.45 LGH-PERM）---
+  it('LGH-PERM-01: ログアウト押下で signOutUser が1回呼ばれる', async () => {
+    signOutUser.mockResolvedValue(undefined)
+    render(<PermissionsPage />)
+    await userEvent.click(screen.getByRole('button', { name: /ログアウト/ }))
+    expect(signOutUser).toHaveBeenCalledTimes(1)
+  })
+
+  it('LGH-PERM-02: ログアウト成功で router.push("/login") を呼ぶ', async () => {
+    signOutUser.mockResolvedValue(undefined)
+    render(<PermissionsPage />)
+    await userEvent.click(screen.getByRole('button', { name: /ログアウト/ }))
+    await waitFor(() => expect(push).toHaveBeenCalledWith('/login'))
+  })
+
+  it('LGH-PERM-03: ログアウト失敗時は遷移せず LOGOUT_FAILED を表示する', async () => {
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    signOutUser.mockRejectedValue(new Error('signout failed'))
+    render(<PermissionsPage />)
+    await userEvent.click(screen.getByRole('button', { name: /ログアウト/ }))
+    await waitFor(() =>
+      expect(screen.getByText(ERROR_MESSAGES.LOGOUT_FAILED)).toBeInTheDocument()
+    )
+    expect(push).not.toHaveBeenCalledWith('/login')
+    consoleErrorSpy.mockRestore()
   })
 })
