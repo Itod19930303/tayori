@@ -261,4 +261,32 @@ describe('app/(auth)/login/page', () => {
     expect(removeItem).toHaveBeenCalledWith(RETURN_URL_STORAGE_KEY)
     removeItem.mockRestore()
   })
+
+  it('LP-17: currentUser が getRedirectResult 解決前に利用可能でも returnUrl 復元を待って正しい宛先のみへ遷移（レースコンディション回帰）', async () => {
+    // モバイルのリダイレクト復帰時、onAuthStateChanged が getRedirectResult の解決より
+    // 先に currentUser を確定させるレースを再現する。getRedirectResult を手動制御可能な
+    // 未解決 Promise にし、解決前は currentUser があっても遷移してはならないことを検証する。
+    sessionStorage.setItem(RETURN_URL_STORAGE_KEY, '/albums/abc123')
+    let resolveRedirect: (value: unknown) => void = () => {}
+    getRedirectResult.mockReturnValue(
+      new Promise((resolve) => {
+        resolveRedirect = resolve
+      })
+    )
+    // getRedirectResult 解決前に currentUser が確定した状態でマウントする
+    authState = { currentUser: mockUser, loading: false }
+    render(<LoginPage />)
+
+    // 解決前はデフォルト '/' への誤遷移を含め一切遷移しない
+    await waitFor(() => expect(getRedirectResult).toHaveBeenCalledTimes(1))
+    expect(replace).not.toHaveBeenCalled()
+
+    // getRedirectResult 解決 → returnUrl 復元後にのみ正しい宛先へ遷移する
+    resolveRedirect({ user: mockUser })
+    await waitFor(() =>
+      expect(replace).toHaveBeenCalledWith('/albums/abc123')
+    )
+    expect(replace).not.toHaveBeenCalledWith('/')
+    expect(replace).toHaveBeenCalledTimes(1)
+  })
 })

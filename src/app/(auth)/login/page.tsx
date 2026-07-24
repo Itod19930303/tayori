@@ -44,6 +44,13 @@ function LoginPageContent() {
   // 遷移そのものは既存 effect に一本化するため、ここでは遷移先の「値」だけを反映する
   // （getRedirectResult の effect から router.replace を直接呼ばず二重遷移を防ぐ・基本設計書 6.1.1(4)）。
   const [redirectReturnUrl, setRedirectReturnUrl] = useState<string | null>(null)
+  // getRedirectResult の処理中フラグ。true の間は下部の遷移 effect を止める。
+  // onAuthStateChanged はリダイレクト復帰の認証状態を getRedirectResult の解決前に
+  // 検知しうるため、これが無いと currentUser 確定が先行し、復元前の returnUrl（既定 /）へ
+  // 誤って遷移してしまう。マウント時は true とし、getRedirectResult 完了（成功・失敗問わず）で
+  // false へ戻すことで、returnUrl 復元後にのみ正しい宛先へ遷移させる（レースコンディション対策）。
+  const [isProcessingRedirectResult, setIsProcessingRedirectResult] =
+    useState(true)
 
   // 遷移先。共有リンク経由の場合は returnUrl を優先し、なければホームへ（基本設計書 7.4）。
   const returnUrl = searchParams.get('returnUrl') || '/'
@@ -72,8 +79,12 @@ function LoginPageContent() {
         setError(getAuthErrorMessage(code))
       })
       .finally(() => {
+        if (!active) return
         // キーが次回ログインへ誤って引き継がれないよう、いずれの結果でも後始末する。
         sessionStorage.removeItem(RETURN_URL_STORAGE_KEY)
+        // 復元・後始末が済んだ時点で処理中フラグを下ろし、遷移 effect の発火を許可する。
+        // then/catch より後に実行されるため、成功時は redirectReturnUrl 反映後に解放される。
+        setIsProcessingRedirectResult(false)
       })
     return () => {
       active = false
@@ -83,11 +94,14 @@ function LoginPageContent() {
   // 認証状態が確定し（loading=false）かつログイン済みなら遷移する。
   // ログイン成功時は onAuthStateChanged 経由で currentUser が更新され、この effect が発火する。
   // replace を用いてブラウザ履歴に /login を残さない（戻る操作でログイン画面に戻らない）。
+  // getRedirectResult の処理中（isProcessingRedirectResult）は遷移を保留する。
+  // これにより currentUser が先に確定しても、returnUrl の復元完了を待ってから
+  // 正しい destination へ一度だけ遷移する（レースコンディション対策・基本設計書 6.1.1(4)）。
   useEffect(() => {
-    if (!loading && currentUser) {
+    if (!loading && currentUser && !isProcessingRedirectResult) {
       router.replace(destination)
     }
-  }, [loading, currentUser, destination, router])
+  }, [loading, currentUser, destination, router, isProcessingRedirectResult])
 
   // ログイン実行。処理中は isLoading で二重送信を防ぎ、失敗時はコードをメッセージへ変換して表示する。
   const handleSignIn = async () => {
