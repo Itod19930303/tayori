@@ -22,6 +22,10 @@ const replace = vi.fn()
 const push = vi.fn()
 let searchParamsValue = new URLSearchParams('')
 const signInWithGoogle = vi.fn()
+// 第9フェーズ（signInWithRedirect対応）で追加するモック（設計書 6.1.1(3)(4)）
+const getRedirectResult = vi.fn()
+const isMobileDevice = vi.fn()
+const RETURN_URL_STORAGE_KEY = 'tayori:returnUrl'
 
 vi.mock('@/hooks/useAuth', () => ({
   useAuth: () => authState,
@@ -35,6 +39,10 @@ vi.mock('firebase/auth', () => ({
   signInWithPopup: vi.fn(),
   signOut: vi.fn(),
   GoogleAuthProvider: class {},
+  getRedirectResult: (...args: unknown[]) => getRedirectResult(...args),
+}))
+vi.mock('@/lib/device', () => ({
+  isMobileDevice: (...args: unknown[]) => isMobileDevice(...args),
 }))
 vi.mock('@/lib/auth', async (importActual) => {
   const actual = await importActual<typeof import('@/lib/auth')>()
@@ -54,6 +62,10 @@ describe('app/(auth)/login/page', () => {
     authState = { currentUser: null, loading: false }
     searchParamsValue = new URLSearchParams('')
     vi.clearAllMocks()
+    // 既定はリダイレクト由来でない通常表示（null）・PC判定。各テストで上書きする
+    getRedirectResult.mockResolvedValue(null)
+    isMobileDevice.mockReturnValue(false)
+    sessionStorage.clear()
   })
 
   it('LP-01: 未ログイン時にログイン UI を表示し遷移しない', () => {
@@ -172,5 +184,109 @@ describe('app/(auth)/login/page', () => {
     await waitFor(() => expect(button).toBeEnabled())
     await userEvent.click(button)
     expect(signInWithGoogle).toHaveBeenCalledTimes(2)
+  })
+
+  // 第9フェーズ（signInWithRedirect対応）: getRedirectResult のマウント時処理と
+  // returnUrl の sessionStorage 保存/復元/削除を検証する（設計書 6.1.1(3)(4)）。
+
+  it('LP-12: getRedirectResult 成功時に sessionStorage の returnUrl を復元して遷移', async () => {
+    sessionStorage.setItem(RETURN_URL_STORAGE_KEY, '/albums/abc123')
+    getRedirectResult.mockResolvedValue({ user: mockUser })
+    const { rerender } = render(<LoginPage />)
+    await waitFor(() => expect(getRedirectResult).toHaveBeenCalledTimes(1))
+    // onAuthStateChanged 相当で currentUser が更新される
+    authState = { currentUser: mockUser, loading: false }
+    rerender(<LoginPage />)
+    await waitFor(() =>
+      expect(replace).toHaveBeenCalledWith('/albums/abc123')
+    )
+    // 遷移経路は二重化しない（replace は1回のみ）
+    expect(replace).toHaveBeenCalledTimes(1)
+  })
+
+  it('LP-13: getRedirectResult が null なら従来どおりUI表示・遷移しない（回帰）', async () => {
+    getRedirectResult.mockResolvedValue(null)
+    render(<LoginPage />)
+    await waitFor(() => expect(getRedirectResult).toHaveBeenCalled())
+    expect(
+      screen.getByRole('button', { name: /Googleでログイン/ })
+    ).toBeInTheDocument()
+    expect(replace).not.toHaveBeenCalled()
+  })
+
+  it('LP-14: getRedirectResult reject 時に AUTH_SIGNIN_FAILED を表示・遷移しない', async () => {
+    const removeItem = vi.spyOn(Storage.prototype, 'removeItem')
+    getRedirectResult.mockRejectedValue({ code: 'auth/no-auth-event' })
+    render(<LoginPage />)
+    await waitFor(() =>
+      expect(screen.getByRole('alert')).toHaveTextContent(
+        ERROR_MESSAGES.AUTH_SIGNIN_FAILED
+      )
+    )
+    expect(replace).not.toHaveBeenCalled()
+    // 失敗時もキーの後始末を行う
+    expect(removeItem).toHaveBeenCalledWith(RETURN_URL_STORAGE_KEY)
+    removeItem.mockRestore()
+  })
+
+  it('LP-15: モバイル判定時、redirect 直前に returnUrl を sessionStorage へ保存', async () => {
+    isMobileDevice.mockReturnValue(true)
+    searchParamsValue = new URLSearchParams('returnUrl=/albums/xyz')
+    signInWithGoogle.mockResolvedValue(null)
+    const setItem = vi.spyOn(Storage.prototype, 'setItem')
+    render(<LoginPage />)
+    await clickSignIn()
+    await waitFor(() => expect(signInWithGoogle).toHaveBeenCalled())
+    // 保存→redirect の順序を担保する
+    const setItemOrder = setItem.mock.invocationCallOrder[
+      setItem.mock.calls.findIndex(
+        ([k]) => k === RETURN_URL_STORAGE_KEY
+      )
+    ]
+    const signInOrder = signInWithGoogle.mock.invocationCallOrder[0]
+    expect(setItem).toHaveBeenCalledWith(RETURN_URL_STORAGE_KEY, '/albums/xyz')
+    expect(setItemOrder).toBeLessThan(signInOrder)
+    setItem.mockRestore()
+  })
+
+  it('LP-16: returnUrl 不在時は / へフォールバックし復元後にキー削除', async () => {
+    const removeItem = vi.spyOn(Storage.prototype, 'removeItem')
+    // sessionStorage にキー無し
+    getRedirectResult.mockResolvedValue({ user: mockUser })
+    const { rerender } = render(<LoginPage />)
+    await waitFor(() => expect(getRedirectResult).toHaveBeenCalledTimes(1))
+    authState = { currentUser: mockUser, loading: false }
+    rerender(<LoginPage />)
+    await waitFor(() => expect(replace).toHaveBeenCalledWith('/'))
+    expect(removeItem).toHaveBeenCalledWith(RETURN_URL_STORAGE_KEY)
+    removeItem.mockRestore()
+  })
+
+  it('LP-17: currentUser が getRedirectResult 解決前に利用可能でも returnUrl 復元を待って正しい宛先のみへ遷移（レースコンディション回帰）', async () => {
+    // モバイルのリダイレクト復帰時、onAuthStateChanged が getRedirectResult の解決より
+    // 先に currentUser を確定させるレースを再現する。getRedirectResult を手動制御可能な
+    // 未解決 Promise にし、解決前は currentUser があっても遷移してはならないことを検証する。
+    sessionStorage.setItem(RETURN_URL_STORAGE_KEY, '/albums/abc123')
+    let resolveRedirect: (value: unknown) => void = () => {}
+    getRedirectResult.mockReturnValue(
+      new Promise((resolve) => {
+        resolveRedirect = resolve
+      })
+    )
+    // getRedirectResult 解決前に currentUser が確定した状態でマウントする
+    authState = { currentUser: mockUser, loading: false }
+    render(<LoginPage />)
+
+    // 解決前はデフォルト '/' への誤遷移を含め一切遷移しない
+    await waitFor(() => expect(getRedirectResult).toHaveBeenCalledTimes(1))
+    expect(replace).not.toHaveBeenCalled()
+
+    // getRedirectResult 解決 → returnUrl 復元後にのみ正しい宛先へ遷移する
+    resolveRedirect({ user: mockUser })
+    await waitFor(() =>
+      expect(replace).toHaveBeenCalledWith('/albums/abc123')
+    )
+    expect(replace).not.toHaveBeenCalledWith('/')
+    expect(replace).toHaveBeenCalledTimes(1)
   })
 })
