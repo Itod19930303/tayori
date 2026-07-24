@@ -204,6 +204,25 @@ describe('app/albums/[albumId]/page (アルバム詳細)', () => {
     ).not.toBeInTheDocument()
   })
 
+  // --- 403/404 通知画面でも共通ヘッダー（ログアウト手段）が提供されること（CodeRabbit Major指摘）---
+  it('ADP-14: 非メンバー403相当でも TopHeader のログアウトボタンが表示され機能する', async () => {
+    signOutUser.mockResolvedValue(undefined)
+    albumState = { album: makeAlbum(['other-uid']), loading: false, notFound: false }
+    render(<AlbumDetailPage />)
+    expect(screen.getByText(ERROR_MESSAGES.FORBIDDEN)).toBeInTheDocument()
+    const btn = screen.getByRole('button', { name: /ログアウト/ })
+    expect(btn).toBeInTheDocument()
+    await userEvent.click(btn)
+    expect(signOutUser).toHaveBeenCalledTimes(1)
+  })
+
+  it('ADP-15: アルバム不在404相当でも TopHeader のログアウトボタンが表示される', () => {
+    albumState = { album: null, loading: false, notFound: true }
+    render(<AlbumDetailPage />)
+    expect(screen.getByText(/アルバムが見つかりません/)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /ログアウト/ })).toBeInTheDocument()
+  })
+
   // --- 共通ヘッダーのログアウトハンドラ（テスト仕様書 §5.45 LGH-DETAIL）---
   it('LGH-DETAIL-01: ログアウト押下で signOutUser が1回呼ばれる', async () => {
     signOutUser.mockResolvedValue(undefined)

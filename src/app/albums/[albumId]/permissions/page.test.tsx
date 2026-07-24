@@ -268,6 +268,22 @@ describe('app/albums/[albumId]/permissions/page (権限管理)', () => {
     expect(push).toHaveBeenCalledWith('/albums/album-1')
   })
 
+  // --- 403 通知画面でも共通ヘッダー（ログアウト手段）が提供されること（CodeRabbit Major指摘）---
+  it('PP-15: canManage=false の403相当でも TopHeader のログアウトボタンが表示され機能する', async () => {
+    signOutUser.mockResolvedValue(undefined)
+    albumState = {
+      album: makeAlbum([{ ...ownerMe, role: 'viewer', canManage: false }]),
+      loading: false,
+      notFound: false,
+    }
+    render(<PermissionsPage />)
+    expect(screen.getByText(ERROR_MESSAGES.FORBIDDEN)).toBeInTheDocument()
+    const btn = screen.getByRole('button', { name: /ログアウト/ })
+    expect(btn).toBeInTheDocument()
+    await userEvent.click(btn)
+    expect(signOutUser).toHaveBeenCalledTimes(1)
+  })
+
   // --- 共通ヘッダーのログアウトハンドラ（テスト仕様書 §5.45 LGH-PERM）---
   it('LGH-PERM-01: ログアウト押下で signOutUser が1回呼ばれる', async () => {
     signOutUser.mockResolvedValue(undefined)

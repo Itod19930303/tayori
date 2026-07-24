@@ -13,7 +13,8 @@ import { useAlbum } from '@/hooks/useAlbum'
 import { useMedia } from '@/hooks/useMedia'
 import { useLogout } from '@/hooks/useLogout'
 import { getPreviewUrl } from '@/lib/mediaUrl'
-import { TopHeader } from '@/components/organisms/TopHeader'
+import { AuthedShell } from '@/components/organisms/AuthedShell'
+import { NoticeScreen } from '@/components/molecules/NoticeScreen'
 import type { Media } from '@/types'
 import { ERROR_MESSAGES } from '@/lib/messages/errorMessages'
 
@@ -26,17 +27,6 @@ function LoadingScreen() {
         aria-label="読み込み中"
         className="size-8 animate-spin rounded-full border-4 border-outline-variant border-t-primary"
       />
-    </div>
-  )
-}
-
-// 403/404 相当の中央メッセージ表示（アルバム詳細ページと同一パターン）。
-function NoticeScreen({ message }: { message: string }) {
-  return (
-    <div className="flex min-h-screen flex-1 items-center justify-center bg-background px-margin-mobile text-center">
-      <p className="font-body-md text-body-md text-on-surface-variant">
-        {message}
-      </p>
     </div>
   )
 }
@@ -132,36 +122,56 @@ export default function MediaPreviewPage() {
     return null
   }
 
+  // 以降のエラー通知（403/404）も AuthedShell 内で表示し、ログイン済みユーザーが
+  // アクセスできない場合でも共通ヘッダー（ログアウト導線）を維持する（CodeRabbit Major指摘）。
   // 親アルバムが存在しない場合は404相当を表示する。
   if (albumNotFound || !album) {
-    return <NoticeScreen message={ERROR_MESSAGES.ALBUM_NOT_FOUND} />
+    return (
+      <AuthedShell
+        currentUser={currentUser}
+        onLogoutClick={handleLogout}
+        logoutError={logoutError}
+      >
+        <NoticeScreen message={ERROR_MESSAGES.ALBUM_NOT_FOUND} />
+      </AuthedShell>
+    )
   }
 
   // 非メンバーは403相当を表示する（memberUids で判定、アルバム詳細と統一。設計書4.9 アクセス条件）。
   if (!album.memberUids?.includes(currentUser.uid)) {
-    return <NoticeScreen message={ERROR_MESSAGES.FORBIDDEN} />
+    return (
+      <AuthedShell
+        currentUser={currentUser}
+        onLogoutClick={handleLogout}
+        logoutError={logoutError}
+      >
+        <NoticeScreen message={ERROR_MESSAGES.FORBIDDEN} />
+      </AuthedShell>
+    )
   }
 
   // 対象メディアが存在しない場合は404相当を表示する（403文言とは区別する）。
   if (mediaNotFound || !media) {
-    return <NoticeScreen message={ERROR_MESSAGES.MEDIA_NOT_FOUND} />
+    return (
+      <AuthedShell
+        currentUser={currentUser}
+        onLogoutClick={handleLogout}
+        logoutError={logoutError}
+      >
+        <NoticeScreen message={ERROR_MESSAGES.MEDIA_NOT_FOUND} />
+      </AuthedShell>
+    )
   }
 
   const uploaderInitial = media.uploaderName?.charAt(0) ?? '?'
 
   // TopHeader を最上部の共通バーとして配置し、既存のプレビュー2ペインレイアウトはその下段に維持する（設計書 4.10）。
   return (
-    <div className="flex min-h-screen flex-1 flex-col bg-background">
-      <TopHeader currentUser={currentUser} onLogoutClick={handleLogout} />
-      {logoutError && (
-        <p
-          role="alert"
-          aria-live="assertive"
-          className="bg-error-container px-margin-mobile py-stack-sm text-center font-body-md text-body-md text-error md:px-margin-desktop"
-        >
-          {logoutError}
-        </p>
-      )}
+    <AuthedShell
+      currentUser={currentUser}
+      onLogoutClick={handleLogout}
+      logoutError={logoutError}
+    >
       <div className="flex flex-1 flex-col bg-background md:flex-row">
       {/* 左ペイン: メディア表示（前後ナビゲーションは含めない。設計書4.9） */}
       <div className="flex flex-1 items-center justify-center bg-surface-variant p-margin-mobile md:p-margin-desktop">
@@ -206,6 +216,6 @@ export default function MediaPreviewPage() {
         </a>
       </aside>
       </div>
-    </div>
+    </AuthedShell>
   )
 }

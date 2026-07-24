@@ -207,6 +207,30 @@ describe('app/albums/[albumId]/media/[mediaId]/page (MediaPreviewPage)', () => {
     expect(screen.getByRole('img')).toBeInTheDocument()
   })
 
+  // --- 403/404 通知画面でも共通ヘッダー（ログアウト手段）が提供されること（CodeRabbit Major指摘）---
+  it('MPP-13: 非メンバー403相当でも TopHeader のログアウトボタンが表示される', () => {
+    albumState = { album: makeAlbum(['other-uid']), loading: false, notFound: false }
+    render(<MediaPreviewPage />)
+    expect(screen.getByText(ERROR_MESSAGES.FORBIDDEN)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /ログアウト/ })).toBeInTheDocument()
+  })
+
+  it('MPP-14: アルバム不在404相当でも TopHeader のログアウトボタンが表示される', () => {
+    albumState = { album: null, loading: false, notFound: true }
+    render(<MediaPreviewPage />)
+    expect(screen.getByText(ERROR_MESSAGES.ALBUM_NOT_FOUND)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /ログアウト/ })).toBeInTheDocument()
+  })
+
+  it('MPP-15: メディア不在404相当のログアウト押下で signOutUser が呼ばれる', async () => {
+    signOutUser.mockResolvedValue(undefined)
+    mediaState = { media: null, loading: false, notFound: true }
+    render(<MediaPreviewPage />)
+    expect(screen.getByText(ERROR_MESSAGES.MEDIA_NOT_FOUND)).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: /ログアウト/ }))
+    expect(signOutUser).toHaveBeenCalledTimes(1)
+  })
+
   // --- 共通ヘッダーのログアウトハンドラ（テスト仕様書 §5.45 LGH-PREVIEW）---
   it('LGH-PREVIEW-01: ログアウト押下で signOutUser が1回呼ばれる', async () => {
     signOutUser.mockResolvedValue(undefined)

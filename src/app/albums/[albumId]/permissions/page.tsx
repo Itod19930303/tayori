@@ -25,7 +25,8 @@ import {
   type InlineMessage,
 } from '@/components/templates/PermissionsTemplate'
 import type { PermissionField } from '@/components/molecules/MemberRow'
-import { TopHeader } from '@/components/organisms/TopHeader'
+import { AuthedShell } from '@/components/organisms/AuthedShell'
+import { NoticeScreen } from '@/components/molecules/NoticeScreen'
 import type { AlbumMember } from '@/types'
 import { ERROR_MESSAGES } from '@/lib/messages/errorMessages'
 import { SUCCESS_MESSAGES } from '@/lib/messages/successMessages'
@@ -39,15 +40,6 @@ function LoadingScreen() {
         aria-label="読み込み中"
         className="size-8 animate-spin rounded-full border-4 border-outline-variant border-t-primary"
       />
-    </div>
-  )
-}
-
-// 403相当の中央メッセージ表示（upload/detail ページと同一パターン）。
-function NoticeScreen({ message }: { message: string }) {
-  return (
-    <div className="flex min-h-screen flex-1 items-center justify-center bg-background px-margin-mobile text-center">
-      <p className="font-body-md text-body-md text-on-surface-variant">{message}</p>
     </div>
   )
 }
@@ -156,25 +148,29 @@ export default function PermissionsPage() {
   if (albumLoading) return <LoadingScreen />
 
   // canManage 権限が無いメンバー（editor/viewer）・非メンバーには 403相当を表示する（設計書7.3）。
+  // 403通知も AuthedShell 内で表示し、ログイン済みユーザーが権限を持たない場合でも
+  // 共通ヘッダー（ログアウト導線）を維持する（CodeRabbit Major指摘）。
   const myMember = album?.members?.find((m) => m.uid === currentUser.uid)
   if (!myMember?.canManage) {
-    return <NoticeScreen message={ERROR_MESSAGES.FORBIDDEN} />
+    return (
+      <AuthedShell
+        currentUser={currentUser}
+        onLogoutClick={handleLogout}
+        logoutError={logoutError}
+      >
+        <NoticeScreen message={ERROR_MESSAGES.FORBIDDEN} />
+      </AuthedShell>
+    )
   }
 
   // TopHeader を最上部の共通バーとして配置し、既存のページヘッダー（戻る導線・見出し）は
   // その下段に維持する（設計書 4.10）。
   return (
-    <div className="flex min-h-screen flex-1 flex-col bg-background">
-      <TopHeader currentUser={currentUser} onLogoutClick={handleLogout} />
-      {logoutError && (
-        <p
-          role="alert"
-          aria-live="assertive"
-          className="bg-error-container px-margin-mobile py-stack-sm text-center font-body-md text-body-md text-error md:px-margin-desktop"
-        >
-          {logoutError}
-        </p>
-      )}
+    <AuthedShell
+      currentUser={currentUser}
+      onLogoutClick={handleLogout}
+      logoutError={logoutError}
+    >
       <PermissionsTemplate
         albumTitle={album?.title ?? ''}
         albumId={albumId}
@@ -192,6 +188,6 @@ export default function PermissionsPage() {
         message={message}
         onBack={() => router.push(`/albums/${albumId}`)}
       />
-    </div>
+    </AuthedShell>
   )
 }
