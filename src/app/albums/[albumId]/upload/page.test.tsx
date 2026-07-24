@@ -339,7 +339,77 @@ describe('app/albums/[albumId]/upload/page (アップロード・確定前プレ
     expect(screen.queryByLabelText(/ファイルを選択/)).not.toBeInTheDocument()
   })
 
-  it('UPP-16: 確定前（pending）行が残ったままアンマウントすると残存 previewUrl を件数分解放する', async () => {
+  it('UPP-16: onBack がヘッダー戻るリンク経由で /albums/{albumId} へ遷移する', async () => {
+    render(<UploadPage />)
+    // uploads 空（活性）のヘッダー戻るリンクをクリックする
+    await userEvent.click(screen.getByRole('button', { name: /に戻る/ }))
+    expect(push).toHaveBeenCalledWith('/albums/album-1')
+  })
+
+  it('UPP-17: 完了モーダル内「戻る」ボタンも同じ /albums/{albumId} へ遷移する', async () => {
+    mockUploadSuccess()
+    render(<UploadPage />)
+    await userEvent.upload(getFileInput(), makeFile('a.jpg', 'image/jpeg'))
+    await userEvent.click(getSaveButton())
+    await waitFor(() => expect(screen.getByText(/保存済み/)).toBeInTheDocument())
+
+    // 完了モーダル内の「戻る」ボタン（末尾要素。ヘッダー戻るリンクとは別）をクリック
+    const backButtons = screen.getAllByRole('button', { name: '戻る' })
+    await userEvent.click(backButtons[backButtons.length - 1])
+    expect(push).toHaveBeenCalledWith('/albums/album-1')
+  })
+
+  it('UPP-18: アップロード進行中はヘッダー戻るリンクが非活性で遷移しない', async () => {
+    // uploadFile を resolve/reject させず進行中（uploading）を維持する
+    uploadFile.mockImplementation(
+      (
+        _albumId: string,
+        _file: File,
+        cbs: { onProgress?: (p: number) => void }
+      ) => {
+        cbs.onProgress?.(30)
+        return new Promise(() => {})
+      }
+    )
+    render(<UploadPage />)
+    await userEvent.upload(getFileInput(), makeFile('a.jpg', 'image/jpeg'))
+    await userEvent.click(getSaveButton())
+
+    const back = screen.getByRole('button', { name: /に戻る/ })
+    await waitFor(() =>
+      expect(back).toHaveAttribute('aria-disabled', 'true')
+    )
+    await userEvent.click(back)
+    expect(push).not.toHaveBeenCalled()
+  })
+
+  it('UPP-19: 完了モーダル「続けてアップロードする」で uploads がリセットされ初期状態へ戻る', async () => {
+    mockUploadSuccess()
+    render(<UploadPage />)
+    await userEvent.upload(getFileInput(), makeFile('a.jpg', 'image/jpeg'))
+    await userEvent.click(getSaveButton())
+    await waitFor(() => expect(screen.getByText(/保存済み/)).toBeInTheDocument())
+
+    uploadFile.mockClear()
+    createMediaDoc.mockClear()
+
+    await userEvent.click(
+      screen.getByRole('button', { name: '続けてアップロードする' })
+    )
+
+    // uploads が空になり一覧行が消え、保存ボタンが非活性・完了モーダルが閉じる
+    expect(screen.queryByText('a.jpg')).not.toBeInTheDocument()
+    expect(getSaveButton()).toBeDisabled()
+    expect(
+      screen.queryByRole('button', { name: '続けてアップロードする' })
+    ).not.toBeInTheDocument()
+    // 追加のアップロードは起きず、previewUrl が解放される
+    expect(uploadFile).not.toHaveBeenCalled()
+    expect(createMediaDoc).not.toHaveBeenCalled()
+    expect(global.URL.revokeObjectURL).toHaveBeenCalled()
+  })
+
+  it('UPP-20: 確定前（pending）行が残ったままアンマウントすると残存 previewUrl を件数分解放する', async () => {
     // createObjectURL を呼び出しごとに異なる値へ変え、pending 行の previewUrl を追跡する。
     let seq = 0
     global.URL.createObjectURL = vi.fn(() => `blob:preview-${seq++}`)

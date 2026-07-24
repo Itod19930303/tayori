@@ -201,6 +201,23 @@ export default function UploadPage() {
     void runUpload(item.file, key, true)
   }
 
+  // ヘッダー戻るリンク & 完了モーダル「戻る」の遷移先。permissions/page.tsx の onBack と同一パターンで
+  // 遷移先は /albums/${albumId} 固定（設計書4.7 戻る導線の仕様）。
+  const handleBack = () => {
+    router.push(`/albums/${albumId}`)
+  }
+
+  // 完了モーダル「続けてアップロードする」。uploads を空配列へリセットし、ファイル再選択可能な初期状態へ戻す
+  // （allDone が false になり完了モーダルは自動的に閉じる）。同時に確定前行の previewUrl を解放し
+  // fileErrors をクリアして、メモリリークと古いエラー残留を防ぐ（設計書4.7 v2.5 / 6.3）。
+  const handleResetUploads = () => {
+    uploads.forEach((u) => {
+      if (u.previewUrl) URL.revokeObjectURL(u.previewUrl)
+    })
+    setUploads([])
+    setFileErrors([])
+  }
+
   // 保存ボタン活性条件: 確定前（pending）行が1件以上あること（設計書4.7）。
   const canSave = uploads.some((u) => u.status === 'pending')
 
@@ -235,6 +252,8 @@ export default function UploadPage() {
       onToggleSelect={handleToggleSelect}
       onDeleteSelected={handleDeleteSelected}
       fileErrors={fileErrors}
+      onBack={handleBack}
+      onResetUploads={handleResetUploads}
       albumName={album?.title}
     />
   )
