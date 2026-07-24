@@ -10,7 +10,9 @@ import { useAuth } from '@/hooks/useAuth'
 import { useAlbum } from '@/hooks/useAlbum'
 import { useMediaList } from '@/hooks/useMediaList'
 import { useAcceptInvite } from '@/hooks/useAcceptInvite'
+import { useLogout } from '@/hooks/useLogout'
 import { AlbumDetailTemplate } from '@/components/templates/AlbumDetailTemplate'
+import { TopHeader } from '@/components/organisms/TopHeader'
 import { ERROR_MESSAGES } from '@/lib/messages/errorMessages'
 
 // 認証・データ確認中のフルスクリーンスピナー（ちらつき防止、基本設計書 7.4）。
@@ -43,6 +45,7 @@ export default function AlbumDetailPage() {
   const { currentUser, loading: authLoading } = useAuth()
   const { album, loading: albumLoading, notFound } = useAlbum(albumId)
   const { mediaItems, loading: mediaLoading } = useMediaList(albumId)
+  const { handleLogout, logoutError } = useLogout()
   const router = useRouter()
 
   // 403判定の「前」に受諾処理を実行し、招待済みだが未受諾のユーザーを初回アクセスで
@@ -83,19 +86,33 @@ export default function AlbumDetailPage() {
   const myMember = album.members?.find((m) => m.uid === currentUser.uid)
   const canManage = myMember?.canManage === true
 
+  // TopHeader を最上部の共通バーとして配置し、既存のページヘッダー（アルバム名・各種リンク）は
+  // その下段に維持する（設計書 4.10）。
   return (
-    <AlbumDetailTemplate
-      album={album}
-      mediaItems={mediaItems}
-      loading={mediaLoading}
-      onUploadClick={() => router.push(`/albums/${albumId}/upload`)}
-      onSelectMedia={(media) =>
-        router.push(`/albums/${albumId}/media/${media.mediaId}`)
-      }
-      canManage={canManage}
-      onManagePermissionsClick={() =>
-        router.push(`/albums/${albumId}/permissions`)
-      }
-    />
+    <div className="flex min-h-screen flex-1 flex-col bg-background">
+      <TopHeader currentUser={currentUser} onLogoutClick={handleLogout} />
+      {logoutError && (
+        <p
+          role="alert"
+          aria-live="assertive"
+          className="bg-error-container px-margin-mobile py-stack-sm text-center font-body-md text-body-md text-error md:px-margin-desktop"
+        >
+          {logoutError}
+        </p>
+      )}
+      <AlbumDetailTemplate
+        album={album}
+        mediaItems={mediaItems}
+        loading={mediaLoading}
+        onUploadClick={() => router.push(`/albums/${albumId}/upload`)}
+        onSelectMedia={(media) =>
+          router.push(`/albums/${albumId}/media/${media.mediaId}`)
+        }
+        canManage={canManage}
+        onManagePermissionsClick={() =>
+          router.push(`/albums/${albumId}/permissions`)
+        }
+      />
+    </div>
   )
 }

@@ -12,6 +12,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { useAlbum } from '@/hooks/useAlbum'
 import { usePendingInvites } from '@/hooks/usePendingInvites'
 import { useAcceptInvite } from '@/hooks/useAcceptInvite'
+import { useLogout } from '@/hooks/useLogout'
 import {
   createInvite,
   cancelInvite,
@@ -24,6 +25,7 @@ import {
   type InlineMessage,
 } from '@/components/templates/PermissionsTemplate'
 import type { PermissionField } from '@/components/molecules/MemberRow'
+import { TopHeader } from '@/components/organisms/TopHeader'
 import type { AlbumMember } from '@/types'
 import { ERROR_MESSAGES } from '@/lib/messages/errorMessages'
 import { SUCCESS_MESSAGES } from '@/lib/messages/successMessages'
@@ -56,6 +58,7 @@ export default function PermissionsPage() {
   const { currentUser, loading: authLoading } = useAuth()
   const { album, loading: albumLoading } = useAlbum(albumId)
   const { invites } = usePendingInvites(albumId)
+  const { handleLogout, logoutError } = useLogout()
   const router = useRouter()
 
   // 403判定の「前」に受諾処理を実行し、招待済みユーザーを自動的にメンバー化する（設計書6.7）。
@@ -158,23 +161,37 @@ export default function PermissionsPage() {
     return <NoticeScreen message={ERROR_MESSAGES.FORBIDDEN} />
   }
 
+  // TopHeader を最上部の共通バーとして配置し、既存のページヘッダー（戻る導線・見出し）は
+  // その下段に維持する（設計書 4.10）。
   return (
-    <PermissionsTemplate
-      albumTitle={album?.title ?? ''}
-      albumId={albumId}
-      members={displayMembers}
-      onToggle={handleToggle}
-      onChangePreset={handleChangePreset}
-      onCancelInvite={handleCancelInvite}
-      onSave={handleSave}
-      isDirty={isDirty}
-      isSaving={isSaving}
-      isInviteOpen={isInviteOpen}
-      onInviteOpen={() => setIsInviteOpen(true)}
-      onInviteClose={() => setIsInviteOpen(false)}
-      onInvite={handleInvite}
-      message={message}
-      onBack={() => router.push(`/albums/${albumId}`)}
-    />
+    <div className="flex min-h-screen flex-1 flex-col bg-background">
+      <TopHeader currentUser={currentUser} onLogoutClick={handleLogout} />
+      {logoutError && (
+        <p
+          role="alert"
+          aria-live="assertive"
+          className="bg-error-container px-margin-mobile py-stack-sm text-center font-body-md text-body-md text-error md:px-margin-desktop"
+        >
+          {logoutError}
+        </p>
+      )}
+      <PermissionsTemplate
+        albumTitle={album?.title ?? ''}
+        albumId={albumId}
+        members={displayMembers}
+        onToggle={handleToggle}
+        onChangePreset={handleChangePreset}
+        onCancelInvite={handleCancelInvite}
+        onSave={handleSave}
+        isDirty={isDirty}
+        isSaving={isSaving}
+        isInviteOpen={isInviteOpen}
+        onInviteOpen={() => setIsInviteOpen(true)}
+        onInviteClose={() => setIsInviteOpen(false)}
+        onInvite={handleInvite}
+        message={message}
+        onBack={() => router.push(`/albums/${albumId}`)}
+      />
+    </div>
   )
 }

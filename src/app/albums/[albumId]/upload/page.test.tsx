@@ -25,6 +25,7 @@ const push = vi.fn()
 const replace = vi.fn()
 const uploadFile = vi.fn()
 const createMediaDoc = vi.fn()
+const signOutUser = vi.fn()
 
 vi.mock('@/hooks/useAuth', () => ({ useAuth: () => authState }))
 vi.mock('@/hooks/useAlbum', () => ({ useAlbum: () => albumState }))
@@ -33,6 +34,9 @@ vi.mock('@/lib/uploadFile', () => ({
 }))
 vi.mock('@/lib/firestoreMedia', () => ({
   createMediaDoc: (...args: unknown[]) => createMediaDoc(...args),
+}))
+vi.mock('@/lib/auth', () => ({
+  signOutUser: (...args: unknown[]) => signOutUser(...args),
 }))
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push, replace }),
@@ -433,5 +437,32 @@ describe('app/albums/[albumId]/upload/page (アップロード・確定前プレ
     expect(revoke).toHaveBeenCalledTimes(2)
     expect(revoke).toHaveBeenCalledWith('blob:preview-0')
     expect(revoke).toHaveBeenCalledWith('blob:preview-1')
+  })
+
+  // --- 共通ヘッダーのログアウトハンドラ（テスト仕様書 §5.45 LGH-UPLOAD）---
+  it('LGH-UPLOAD-01: ログアウト押下で signOutUser が1回呼ばれる', async () => {
+    signOutUser.mockResolvedValue(undefined)
+    render(<UploadPage />)
+    await userEvent.click(screen.getByRole('button', { name: /ログアウト/ }))
+    expect(signOutUser).toHaveBeenCalledTimes(1)
+  })
+
+  it('LGH-UPLOAD-02: ログアウト成功で router.push("/login") を呼ぶ', async () => {
+    signOutUser.mockResolvedValue(undefined)
+    render(<UploadPage />)
+    await userEvent.click(screen.getByRole('button', { name: /ログアウト/ }))
+    await waitFor(() => expect(push).toHaveBeenCalledWith('/login'))
+  })
+
+  it('LGH-UPLOAD-03: ログアウト失敗時は遷移せず LOGOUT_FAILED を表示する', async () => {
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    signOutUser.mockRejectedValue(new Error('signout failed'))
+    render(<UploadPage />)
+    await userEvent.click(screen.getByRole('button', { name: /ログアウト/ }))
+    await waitFor(() =>
+      expect(screen.getByText(ERROR_MESSAGES.LOGOUT_FAILED)).toBeInTheDocument()
+    )
+    expect(push).not.toHaveBeenCalledWith('/login')
+    consoleErrorSpy.mockRestore()
   })
 })

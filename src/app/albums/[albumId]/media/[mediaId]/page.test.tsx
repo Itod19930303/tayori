@@ -26,10 +26,14 @@ let mediaState: { media: Media | null; loading: boolean; notFound: boolean } = {
 }
 const push = vi.fn()
 const replace = vi.fn()
+const signOutUser = vi.fn()
 
 vi.mock('@/hooks/useAuth', () => ({ useAuth: () => authState }))
 vi.mock('@/hooks/useAlbum', () => ({ useAlbum: () => albumState }))
 vi.mock('@/hooks/useMedia', () => ({ useMedia: () => mediaState }))
+vi.mock('@/lib/auth', () => ({
+  signOutUser: (...args: unknown[]) => signOutUser(...args),
+}))
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push, replace }),
   useParams: () => ({ albumId: 'album-1', mediaId: 'media-1' }),
@@ -107,7 +111,9 @@ describe('app/albums/[albumId]/media/[mediaId]/page (MediaPreviewPage)', () => {
 
   it('MPP-03: 右サイドパネルに投稿者情報・ファイル名・投稿日時を表示する', () => {
     render(<MediaPreviewPage />)
-    expect(screen.getByText('テスト太郎')).toBeInTheDocument()
+    // 「テスト太郎」は TopHeader（共通ヘッダー）と右サイドパネルの投稿者名の2箇所に表示される
+    // （テスト仕様書 §5.45 回帰注記）。投稿者名が描画されていることを2件表示で確認する。
+    expect(screen.getAllByText('テスト太郎')).toHaveLength(2)
     expect(screen.getByText('wedding_photo.jpg')).toBeInTheDocument()
     // 投稿日時（2026年）が表示される
     expect(screen.getByText(/2026/)).toBeInTheDocument()
@@ -199,5 +205,32 @@ describe('app/albums/[albumId]/media/[mediaId]/page (MediaPreviewPage)', () => {
     render(<MediaPreviewPage />)
     // albumId/mediaId が解決され、メディア本体が表示される（既知404の解消）
     expect(screen.getByRole('img')).toBeInTheDocument()
+  })
+
+  // --- 共通ヘッダーのログアウトハンドラ（テスト仕様書 §5.45 LGH-PREVIEW）---
+  it('LGH-PREVIEW-01: ログアウト押下で signOutUser が1回呼ばれる', async () => {
+    signOutUser.mockResolvedValue(undefined)
+    render(<MediaPreviewPage />)
+    await userEvent.click(screen.getByRole('button', { name: /ログアウト/ }))
+    expect(signOutUser).toHaveBeenCalledTimes(1)
+  })
+
+  it('LGH-PREVIEW-02: ログアウト成功で router.push("/login") を呼ぶ', async () => {
+    signOutUser.mockResolvedValue(undefined)
+    render(<MediaPreviewPage />)
+    await userEvent.click(screen.getByRole('button', { name: /ログアウト/ }))
+    await waitFor(() => expect(push).toHaveBeenCalledWith('/login'))
+  })
+
+  it('LGH-PREVIEW-03: ログアウト失敗時は遷移せず LOGOUT_FAILED を表示する', async () => {
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    signOutUser.mockRejectedValue(new Error('signout failed'))
+    render(<MediaPreviewPage />)
+    await userEvent.click(screen.getByRole('button', { name: /ログアウト/ }))
+    await waitFor(() =>
+      expect(screen.getByText(ERROR_MESSAGES.LOGOUT_FAILED)).toBeInTheDocument()
+    )
+    expect(push).not.toHaveBeenCalledWith('/login')
+    consoleErrorSpy.mockRestore()
   })
 })

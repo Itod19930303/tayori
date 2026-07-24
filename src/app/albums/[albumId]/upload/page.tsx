@@ -8,10 +8,12 @@ import { useEffect, useRef, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { useAlbum } from '@/hooks/useAlbum'
+import { useLogout } from '@/hooks/useLogout'
 import { validateMediaFile } from '@/lib/validators'
 import { uploadFile } from '@/lib/uploadFile'
 import { createMediaDoc } from '@/lib/firestoreMedia'
 import { UploadTemplate, type FileValidationError } from '@/components/templates/UploadTemplate'
+import { TopHeader } from '@/components/organisms/TopHeader'
 import type { UploadItemState } from '@/components/molecules/UploadItem'
 import { ERROR_MESSAGES } from '@/lib/messages/errorMessages'
 
@@ -44,6 +46,7 @@ export default function UploadPage() {
   const albumId = params.albumId as string
   const { currentUser, loading: authLoading } = useAuth()
   const { album, loading: albumLoading } = useAlbum(albumId)
+  const { handleLogout, logoutError } = useLogout()
   const router = useRouter()
 
   const [uploads, setUploads] = useState<UploadItemState[]>([])
@@ -242,19 +245,33 @@ export default function UploadPage() {
     return <NoticeScreen message={ERROR_MESSAGES.POST_FORBIDDEN} />
   }
 
+  // TopHeader を最上部の共通バーとして配置し、既存のページヘッダー（戻る導線・見出し）は
+  // その下段に維持する（設計書 4.10）。
   return (
-    <UploadTemplate
-      uploads={uploads}
-      onSelectFiles={handleSelectFiles}
-      onSave={handleSave}
-      canSave={canSave}
-      onRetry={handleRetry}
-      onToggleSelect={handleToggleSelect}
-      onDeleteSelected={handleDeleteSelected}
-      fileErrors={fileErrors}
-      onBack={handleBack}
-      onResetUploads={handleResetUploads}
-      albumName={album?.title}
-    />
+    <div className="flex min-h-screen flex-1 flex-col bg-background">
+      <TopHeader currentUser={currentUser} onLogoutClick={handleLogout} />
+      {logoutError && (
+        <p
+          role="alert"
+          aria-live="assertive"
+          className="bg-error-container px-margin-mobile py-stack-sm text-center font-body-md text-body-md text-error md:px-margin-desktop"
+        >
+          {logoutError}
+        </p>
+      )}
+      <UploadTemplate
+        uploads={uploads}
+        onSelectFiles={handleSelectFiles}
+        onSave={handleSave}
+        canSave={canSave}
+        onRetry={handleRetry}
+        onToggleSelect={handleToggleSelect}
+        onDeleteSelected={handleDeleteSelected}
+        fileErrors={fileErrors}
+        onBack={handleBack}
+        onResetUploads={handleResetUploads}
+        albumName={album?.title}
+      />
+    </div>
   )
 }

@@ -8,7 +8,9 @@ import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { useAlbums } from '@/hooks/useAlbums'
+import { useLogout } from '@/hooks/useLogout'
 import { HomeTemplate } from '@/components/templates/HomeTemplate'
+import { TopHeader } from '@/components/organisms/TopHeader'
 
 // 認証確認中のフルスクリーンスピナー（ちらつき防止、基本設計書 7.4）。
 function LoadingScreen() {
@@ -26,6 +28,7 @@ function LoadingScreen() {
 export default function HomePage() {
   const { currentUser, loading } = useAuth()
   const { albums, loading: albumsLoading } = useAlbums()
+  const { handleLogout, logoutError } = useLogout()
   const router = useRouter()
 
   // 認証確定後に未ログインなら /login へ誘導する。returnUrl に現在パスを保持し、
@@ -46,11 +49,26 @@ export default function HomePage() {
     return null
   }
 
+  // TopHeader を最上部の共通バー（アカウント操作）として配置し、既存のページヘッダー
+  // （HomeTemplate 内の「アルバム」見出し＋作成ボタン）はその下段にページ固有ヘッダーとして残す
+  // （役割分離・設計書 4.10 統合方針）。
   return (
-    <HomeTemplate
-      albums={albums}
-      loading={albumsLoading}
-      onCreateClick={() => router.push('/albums/new')}
-    />
+    <div className="flex min-h-screen flex-1 flex-col bg-background">
+      <TopHeader currentUser={currentUser} onLogoutClick={handleLogout} />
+      {logoutError && (
+        <p
+          role="alert"
+          aria-live="assertive"
+          className="bg-error-container px-margin-mobile py-stack-sm text-center font-body-md text-body-md text-error md:px-margin-desktop"
+        >
+          {logoutError}
+        </p>
+      )}
+      <HomeTemplate
+        albums={albums}
+        loading={albumsLoading}
+        onCreateClick={() => router.push('/albums/new')}
+      />
+    </div>
   )
 }

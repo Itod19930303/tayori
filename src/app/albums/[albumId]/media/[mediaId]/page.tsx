@@ -11,7 +11,9 @@ import { useParams, useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { useAlbum } from '@/hooks/useAlbum'
 import { useMedia } from '@/hooks/useMedia'
+import { useLogout } from '@/hooks/useLogout'
 import { getPreviewUrl } from '@/lib/mediaUrl'
+import { TopHeader } from '@/components/organisms/TopHeader'
 import type { Media } from '@/types'
 import { ERROR_MESSAGES } from '@/lib/messages/errorMessages'
 
@@ -106,6 +108,7 @@ export default function MediaPreviewPage() {
     albumId,
     mediaId
   )
+  const { handleLogout, logoutError } = useLogout()
   const router = useRouter()
 
   // 認証確定後に未ログインなら /login へ誘導し、returnUrl に現在のプレビューパスを保持する（基本設計書 7.4）。
@@ -146,8 +149,20 @@ export default function MediaPreviewPage() {
 
   const uploaderInitial = media.uploaderName?.charAt(0) ?? '?'
 
+  // TopHeader を最上部の共通バーとして配置し、既存のプレビュー2ペインレイアウトはその下段に維持する（設計書 4.10）。
   return (
-    <div className="flex min-h-screen flex-1 flex-col bg-background md:flex-row">
+    <div className="flex min-h-screen flex-1 flex-col bg-background">
+      <TopHeader currentUser={currentUser} onLogoutClick={handleLogout} />
+      {logoutError && (
+        <p
+          role="alert"
+          aria-live="assertive"
+          className="bg-error-container px-margin-mobile py-stack-sm text-center font-body-md text-body-md text-error md:px-margin-desktop"
+        >
+          {logoutError}
+        </p>
+      )}
+      <div className="flex flex-1 flex-col bg-background md:flex-row">
       {/* 左ペイン: メディア表示（前後ナビゲーションは含めない。設計書4.9） */}
       <div className="flex flex-1 items-center justify-center bg-surface-variant p-margin-mobile md:p-margin-desktop">
         <MediaViewer media={media} />
@@ -190,6 +205,7 @@ export default function MediaPreviewPage() {
           ダウンロード
         </a>
       </aside>
+      </div>
     </div>
   )
 }

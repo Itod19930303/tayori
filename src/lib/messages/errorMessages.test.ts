@@ -7,7 +7,7 @@ import { ERROR_MESSAGES } from './errorMessages'
 // 関数形式の引数埋め込み（MSG-05/05b）・統合の1対1一致（MSG-07）を検証する。
 
 describe('lib/messages/errorMessages', () => {
-  it('MSG-01: ERROR_MESSAGES が設計どおりの19キーを過不足なく持つ', () => {
+  it('MSG-01: ERROR_MESSAGES が設計どおりの20キーを過不足なく持つ', () => {
     const expectedKeys = [
       'FORBIDDEN',
       'POST_FORBIDDEN',
@@ -15,6 +15,8 @@ describe('lib/messages/errorMessages', () => {
       'MEDIA_NOT_FOUND',
       'SAVE_FAILED',
       'CANCEL_FAILED',
+      // 共通ヘッダー TopHeader のログアウト失敗メッセージ（基本設計書 4.10 / 8.1 #9）
+      'LOGOUT_FAILED',
       'UPLOAD_NETWORK_FAILED',
       'VIDEO_NOT_SUPPORTED',
       'MEDIA_PREVIEW_UNSUPPORTED',
@@ -44,6 +46,9 @@ describe('lib/messages/errorMessages', () => {
     )
     expect(ERROR_MESSAGES.CANCEL_FAILED).toBe(
       '取り消しに失敗しました。時間をおいて再試行してください。'
+    )
+    expect(ERROR_MESSAGES.LOGOUT_FAILED).toBe(
+      'ログアウトに失敗しました。時間をおいて再試行してください。'
     )
     expect(ERROR_MESSAGES.UPLOAD_NETWORK_FAILED).toBe(
       'ネットワークが切断されました。タップして再試行してください。'

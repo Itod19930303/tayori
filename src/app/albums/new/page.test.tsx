@@ -15,10 +15,14 @@ let authState: { currentUser: User | null; loading: boolean } = {
 const replace = vi.fn()
 const push = vi.fn()
 const createAlbum = vi.fn()
+const signOutUser = vi.fn()
 
 vi.mock('@/hooks/useAuth', () => ({ useAuth: () => authState }))
 vi.mock('@/lib/firestoreAlbum', () => ({
   createAlbum: (...args: unknown[]) => createAlbum(...args),
+}))
+vi.mock('@/lib/auth', () => ({
+  signOutUser: (...args: unknown[]) => signOutUser(...args),
 }))
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push, replace }),
@@ -125,5 +129,32 @@ describe('app/albums/new/page (アルバム作成)', () => {
     expect(screen.getByRole('status')).toBeInTheDocument()
     expect(replace).not.toHaveBeenCalled()
     expect(screen.queryByLabelText(/アルバム名/)).not.toBeInTheDocument()
+  })
+
+  // --- 共通ヘッダーのログアウトハンドラ（テスト仕様書 §5.45 LGH-NEW）---
+  it('LGH-NEW-01: ログアウト押下で signOutUser が1回呼ばれる', async () => {
+    signOutUser.mockResolvedValue(undefined)
+    render(<NewAlbumPage />)
+    await userEvent.click(screen.getByRole('button', { name: /ログアウト/ }))
+    expect(signOutUser).toHaveBeenCalledTimes(1)
+  })
+
+  it('LGH-NEW-02: ログアウト成功で router.push("/login") を呼ぶ', async () => {
+    signOutUser.mockResolvedValue(undefined)
+    render(<NewAlbumPage />)
+    await userEvent.click(screen.getByRole('button', { name: /ログアウト/ }))
+    await waitFor(() => expect(push).toHaveBeenCalledWith('/login'))
+  })
+
+  it('LGH-NEW-03: ログアウト失敗時は遷移せず LOGOUT_FAILED を表示する', async () => {
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    signOutUser.mockRejectedValue(new Error('signout failed'))
+    render(<NewAlbumPage />)
+    await userEvent.click(screen.getByRole('button', { name: /ログアウト/ }))
+    await waitFor(() =>
+      expect(screen.getByText(ERROR_MESSAGES.LOGOUT_FAILED)).toBeInTheDocument()
+    )
+    expect(push).not.toHaveBeenCalledWith('/login')
+    consoleErrorSpy.mockRestore()
   })
 })
