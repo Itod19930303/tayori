@@ -35,10 +35,12 @@ export function useAlbum(albumId: string): UseAlbumResult {
         }
         setLoading(false)
       },
-      () => {
+      (error) => {
         // permission-denied 等の購読エラー。クラッシュさせずローディングのみ解除する。
         // 非メンバー（403相当）判定は page 層が album.memberUids で行うため、
         // ここでは notFound（404相当）とは区別してエラーを保持しない設計とする。
+        // 障害調査のため、状態に保持しないエラーも console.error へ原因を残す。
+        console.error('アルバム情報の購読に失敗しました', error)
         setLoading(false)
       }
     )

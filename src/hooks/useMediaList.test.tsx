@@ -29,7 +29,8 @@ describe('hooks/useMediaList', () => {
     expect(result.current.loading).toBe(true)
   })
 
-  it('UML-02: 購読データ受信で mediaItems 更新・loading:false', () => {
+  it('UML-02: 購読データ受信で mediaItems 更新・loading:false（正常時は console.error を呼ばない）', () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
     let cb: (items: Media[]) => void = () => {}
     subscribeMedia.mockImplementation((_id, callback: (m: Media[]) => void) => {
       cb = callback
@@ -39,6 +40,9 @@ describe('hooks/useMediaList', () => {
     act(() => cb([mockImageMedia, mockVideoMedia]))
     expect(result.current.mediaItems).toHaveLength(2)
     expect(result.current.loading).toBe(false)
+    // ログはエラー経路のみ（UML-07と対）。正常受信では出力されない。
+    expect(errorSpy).not.toHaveBeenCalled()
+    errorSpy.mockRestore()
   })
 
   it('UML-03: albumId を第1引数に subscribeMedia を呼ぶ', () => {
@@ -79,5 +83,26 @@ describe('hooks/useMediaList', () => {
     const { unmount } = renderHook(() => useMediaList('album-1'))
     unmount()
     expect(unsub).toHaveBeenCalledTimes(1)
+  })
+
+  it('UML-07: 購読エラー発火時に console.error で原因をログ出力する', () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const error = new Error('subscribe failed')
+    let errCb: (e: unknown) => void = () => {}
+    subscribeMedia.mockImplementation(
+      (_id, _cb: unknown, onError: (e: unknown) => void) => {
+        errCb = onError
+        return vi.fn()
+      }
+    )
+    const { result } = renderHook(() => useMediaList('album-1'))
+    act(() => errCb(error))
+    // メディア一覧購読エラーを識別できる日本語文言と error を引数に1回だけ出力する。
+    expect(errorSpy).toHaveBeenCalledTimes(1)
+    expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('メディア'), error)
+    // UML-05のUXフォールバック（loading解除・空配列）が維持されること。
+    expect(result.current.loading).toBe(false)
+    expect(result.current.mediaItems).toEqual([])
+    errorSpy.mockRestore()
   })
 })

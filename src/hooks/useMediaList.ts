@@ -27,7 +27,10 @@ export function useMediaList(albumId: string): UseMediaListResult {
         setLoading(false)
       },
       // 購読失敗時はクラッシュさせず、空表示へフォールバックしてローディングを解除する。
-      () => {
+      // 障害調査のため、フォールバックで握りつぶす前に原因を console.error へ残す
+      // （UXフォールバック挙動は変えず、ログ出力のみ追加）。
+      (error) => {
+        console.error('メディア一覧の購読に失敗しました', error)
         setMediaItems([])
         setLoading(false)
       }

@@ -39,7 +39,8 @@ describe('hooks/usePendingInvites', () => {
     onSnapshot.mockReturnValue(vi.fn())
   })
 
-  it('UPI-01: 招待を invited:true の AlbumMember へ変換する', () => {
+  it('UPI-01: 招待を invited:true の AlbumMember へ変換する（正常時は console.error を呼ばない）', () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
     let nextCb: (snap: unknown) => void = () => {}
     onSnapshot.mockImplementation((_q, next: (snap: unknown) => void) => {
       nextCb = next
@@ -59,6 +60,9 @@ describe('hooks/usePendingInvites', () => {
     expect(invited.displayName).toBe('invitee@example.com')
     expect(invited.canManage).toBe(false)
     expect(result.current.loading).toBe(false)
+    // ログはエラー経路のみ（UPI-05と対）。正常受信では出力されない。
+    expect(errorSpy).not.toHaveBeenCalled()
+    errorSpy.mockRestore()
   })
 
   it('UPI-02: 招待0件で空配列を返し loading:false', () => {
@@ -93,5 +97,26 @@ describe('hooks/usePendingInvites', () => {
     const { unmount } = renderHook(() => usePendingInvites('album-1'))
     unmount()
     expect(unsub).toHaveBeenCalledTimes(1)
+  })
+
+  it('UPI-05: 購読エラー発火時に console.error で原因をログ出力する', () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const error = { code: 'permission-denied' }
+    let errCb: (e: unknown) => void = () => {}
+    onSnapshot.mockImplementation(
+      (_q, _next: unknown, error2: (e: unknown) => void) => {
+        errCb = error2
+        return vi.fn()
+      }
+    )
+    const { result } = renderHook(() => usePendingInvites('album-1'))
+    act(() => errCb(error))
+    // 招待一覧購読エラーを識別できる日本語文言と error を引数に1回だけ出力する。
+    expect(errorSpy).toHaveBeenCalledTimes(1)
+    expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('招待'), error)
+    // UPI-03の空配列フォールバックが維持されること。
+    expect(result.current.invites).toEqual([])
+    expect(result.current.loading).toBe(false)
+    errorSpy.mockRestore()
   })
 })
