@@ -4,32 +4,25 @@
 // エラーは握りつぶさず呼び出し元へ伝播させ、表示可否の判断は getAuthErrorMessage に委ねる。
 import {
   signInWithPopup,
-  signInWithRedirect,
   signOut,
   GoogleAuthProvider,
   type User,
 } from 'firebase/auth'
 import { auth } from './firebase'
-import { isMobileDevice } from './device'
 import { ERROR_MESSAGES } from './messages/errorMessages'
 
 /**
  * Googleアカウントでログインする。
  *
- * モバイル端末ではポップアップがブロックされやすいため `signInWithRedirect` を用い、
- * PC では従来どおりポップアップ（`signInWithPopup`）で即座に User を得る（基本設計書 6.1.1）。
- * リダイレクト方式はページ遷移を伴い、この関数の戻り値で User を返せないため `null` を返す。
- * リダイレクト復帰後のログイン結果は login/page.tsx の `getRedirectResult` で受け取る。
- * @returns PCポップアップ時は Firebase の User、モバイルのリダイレクト実行時は null
+ * 暫定: モバイルの signInWithRedirect は、Vercelホスティング（authDomainが
+ * {project}.firebaseapp.com のまま）だとサードパーティストレージ制限により
+ * getRedirectResult がnullを返す既知の制約に該当したため、原因切り分けとして
+ * 全端末でポップアップに統一する（isMobileDevice分岐は一時停止、コードは残す）。
+ * モバイルの元々の失敗も、承認済みドメイン未登録が真因だった可能性がある。
+ * @returns Firebase の User
  */
 export async function signInWithGoogle(): Promise<User | null> {
   const provider = new GoogleAuthProvider()
-  if (isMobileDevice()) {
-    // モバイル: リダイレクトで遷移するため、この関数からは User を返せない。
-    await signInWithRedirect(auth, provider)
-    return null
-  }
-  // PC: 既存どおりポップアップで即座に User を得る。
   const result = await signInWithPopup(auth, provider)
   return result.user
 }
