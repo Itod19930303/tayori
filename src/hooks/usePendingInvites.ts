@@ -43,9 +43,11 @@ export function usePendingInvites(albumId: string): UsePendingInvitesResult {
         setInvites(converted)
         setLoading(false)
       },
-      () => {
+      (error) => {
         // 購読エラー（permission-denied 等）はクラッシュさせず空フォールバックし、
         // ローディングのみ解除する（画面を壊さない）。
+        // 障害調査のため、フォールバックで握りつぶす前に原因を console.error へ残す。
+        console.error('招待一覧の購読に失敗しました', error)
         setInvites([])
         setLoading(false)
       }

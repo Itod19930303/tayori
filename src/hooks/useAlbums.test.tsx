@@ -42,7 +42,8 @@ describe('hooks/useAlbums', () => {
     expect(result.current.loading).toBe(true)
   })
 
-  it('UAL-02: 購読データ受信で albums 更新・loading:false', () => {
+  it('UAL-02: 購読データ受信で albums 更新・loading:false（正常時は console.error を呼ばない）', () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
     let cb: (albums: Album[]) => void = () => {}
     subscribeAlbums.mockImplementation((_uid, callback: (a: Album[]) => void) => {
       cb = callback
@@ -52,6 +53,9 @@ describe('hooks/useAlbums', () => {
     act(() => cb([mockAlbum]))
     expect(result.current.albums).toEqual([mockAlbum])
     expect(result.current.loading).toBe(false)
+    // ログはエラー経路のみ（UAL-07と対）。正常受信では出力されない。
+    expect(errorSpy).not.toHaveBeenCalled()
+    errorSpy.mockRestore()
   })
 
   it('UAL-03: currentUser.uid を第1引数に subscribeAlbums を呼ぶ', () => {
@@ -87,5 +91,26 @@ describe('hooks/useAlbums', () => {
     const { unmount } = renderHook(() => useAlbums())
     unmount()
     expect(unsub).toHaveBeenCalledTimes(1)
+  })
+
+  it('UAL-07: 購読エラー発火時に console.error で原因をログ出力する', () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const error = new Error('subscribe failed')
+    let errCb: (e: unknown) => void = () => {}
+    subscribeAlbums.mockImplementation(
+      (_uid, _cb: unknown, onError: (e: unknown) => void) => {
+        errCb = onError
+        return vi.fn()
+      }
+    )
+    const { result } = renderHook(() => useAlbums())
+    act(() => errCb(error))
+    // エラー識別可能な日本語文言と error を引数に1回だけ出力する。
+    expect(errorSpy).toHaveBeenCalledTimes(1)
+    expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('アルバム一覧'), error)
+    // UAL-05のUXフォールバック（loading解除・空配列）が維持されること。
+    expect(result.current.loading).toBe(false)
+    expect(result.current.albums).toEqual([])
+    errorSpy.mockRestore()
   })
 })
