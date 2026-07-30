@@ -14,6 +14,7 @@ import { uploadFile } from '@/lib/uploadFile'
 import { createMediaDoc } from '@/lib/firestoreMedia'
 import { UploadTemplate, type FileValidationError } from '@/components/templates/UploadTemplate'
 import { TopHeader } from '@/components/organisms/TopHeader'
+import { LeaveConfirmModal } from '@/components/molecules/LeaveConfirmModal'
 import type { UploadItemState } from '@/components/molecules/UploadItem'
 import { ERROR_MESSAGES } from '@/lib/messages/errorMessages'
 
@@ -51,6 +52,8 @@ export default function UploadPage() {
 
   const [uploads, setUploads] = useState<UploadItemState[]>([])
   const [fileErrors, setFileErrors] = useState<FileValidationError[]>([])
+  // 離脱確認モーダルの開閉 state（設計書4.10.2）。ホームボタン押下時、保存中でなく pending が残る場合に開く。
+  const [leaveModalOpen, setLeaveModalOpen] = useState(false)
 
   // アンマウント時クリーンアップ用に最新の uploads を保持する ref。
   // クリーンアップ effect の依存配列を空にするとマウント時点の空配列をクロージャで固定してしまい
@@ -224,6 +227,30 @@ export default function UploadPage() {
   // 保存ボタン活性条件: 確定前（pending）行が1件以上あること（設計書4.7）。
   const canSave = uploads.some((u) => u.status === 'pending')
 
+  // ホームボタンの3状態判定に用いる2変数（設計書4.10.2）。互いに独立して算出する。
+  // 非活性化用（保存中判定）: 既存の「戻る」導線と同一判定式を流用し、保存中の誤離脱を防ぐ。
+  const isUploadInProgress = uploads.some((u) =>
+    ['uploading', 'waiting', 'retrying'].includes(u.status)
+  )
+  // 確認モーダル表示用（確定前プレビュー判定）: 非活性化用とは別変数として算出する。
+  const hasPending = uploads.some((u) => u.status === 'pending')
+  // 離脱確認モーダルへ渡す未保存件数（設計書4.10.2）。
+  const pendingCount = uploads.filter((u) => u.status === 'pending').length
+
+  // ホームボタン押下ハンドラ（設計書4.10.2 フロー）。判定順は「①非活性か → ②pending でモーダルか即遷移か」。
+  // 非活性化（isUploadInProgress）がモーダル表示（hasPending）より優先される。
+  const handleHomeClick = () => {
+    // 保存中はボタン自体が非活性のため通常は到達しないが、保険としてガードで早期 return する。
+    if (isUploadInProgress) return
+    if (hasPending) {
+      // 未保存の確定前プレビューが残る場合は確認モーダルを表示し、まだ遷移しない。
+      setLeaveModalOpen(true)
+      return
+    }
+    // pending が無ければ確認を挟まず即座にホームへ遷移する。
+    router.push('/')
+  }
+
   // 認証確認中はちらつき防止のためスピナーを表示する。
   if (authLoading) {
     return <LoadingScreen />
@@ -249,7 +276,14 @@ export default function UploadPage() {
   // その下段に維持する（設計書 4.10）。
   return (
     <div className="flex min-h-screen flex-1 flex-col bg-background">
-      <TopHeader currentUser={currentUser} onLogoutClick={handleLogout} />
+      {/* ホームボタンは3状態（設計書4.10.2）: 保存中は homeDisabled で非活性、pending 残存時は
+          handleHomeClick が離脱確認モーダルを表示、それ以外は即遷移する。 */}
+      <TopHeader
+        currentUser={currentUser}
+        onHomeClick={handleHomeClick}
+        onLogoutClick={handleLogout}
+        homeDisabled={isUploadInProgress}
+      />
       {logoutError && (
         <p
           role="alert"
@@ -271,6 +305,14 @@ export default function UploadPage() {
         onBack={handleBack}
         onResetUploads={handleResetUploads}
         albumName={album?.title}
+      />
+      {/* 離脱確認モーダル（設計書4.10.2）。「移動する」で即ホーム遷移、「キャンセル」で閉じるのみ
+          （uploads 状態・previewUrl は保持し、選択内容を維持する）。 */}
+      <LeaveConfirmModal
+        open={leaveModalOpen}
+        pendingCount={pendingCount}
+        onConfirm={() => router.push('/')}
+        onCancel={() => setLeaveModalOpen(false)}
       />
     </div>
   )

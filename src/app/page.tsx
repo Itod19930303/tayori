@@ -54,7 +54,11 @@ export default function HomePage() {
   // （役割分離・設計書 4.10 統合方針）。
   return (
     <div className="flex min-h-screen flex-1 flex-col bg-background">
-      <TopHeader currentUser={currentUser} onLogoutClick={handleLogout} />
+      <TopHeader
+        currentUser={currentUser}
+        onHomeClick={() => router.push('/')}
+        onLogoutClick={handleLogout}
+      />
       {logoutError && (
         <p
           role="alert"

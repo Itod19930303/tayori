@@ -257,4 +257,12 @@ describe('app/albums/[albumId]/media/[mediaId]/page (MediaPreviewPage)', () => {
     expect(push).not.toHaveBeenCalledWith('/login')
     consoleErrorSpy.mockRestore()
   })
+
+  // --- 共通ヘッダーのホームボタンハンドラ（テスト仕様書 §5.45.1 HMN-PREVIEW・AuthedShell 経由）---
+  it('HMN-PREVIEW-01: ホームボタン押下で router.push("/") が1回呼ばれる', async () => {
+    render(<MediaPreviewPage />)
+    await userEvent.click(screen.getByRole('button', { name: 'ホームへ戻る' }))
+    expect(push).toHaveBeenCalledWith('/')
+    expect(push).toHaveBeenCalledTimes(1)
+  })
 })

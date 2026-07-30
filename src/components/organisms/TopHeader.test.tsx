@@ -23,7 +23,13 @@ function makeUser(overrides: Partial<User>): User {
 
 describe('TopHeader (共通ヘッダー)', () => {
   it('THD-01: currentUser 指定でアバター画像・ユーザー名・ログアウトボタンを表示する', () => {
-    render(<TopHeader currentUser={makeUser({})} onLogoutClick={vi.fn()} />)
+    render(
+      <TopHeader
+        currentUser={makeUser({})}
+        onHomeClick={vi.fn()}
+        onLogoutClick={vi.fn()}
+      />
+    )
     const avatar = screen.getByRole('img', { name: /テスト太郎/ })
     expect(avatar).toHaveAttribute('src', 'https://example.com/a.png')
     expect(screen.getByText('テスト太郎')).toBeInTheDocument()
@@ -34,19 +40,37 @@ describe('TopHeader (共通ヘッダー)', () => {
 
   it('THD-02: ログアウトボタン押下で onLogoutClick が1回呼ばれる', async () => {
     const onLogoutClick = vi.fn()
-    render(<TopHeader currentUser={makeUser({})} onLogoutClick={onLogoutClick} />)
+    render(
+      <TopHeader
+        currentUser={makeUser({})}
+        onHomeClick={vi.fn()}
+        onLogoutClick={onLogoutClick}
+      />
+    )
     await userEvent.click(screen.getByRole('button', { name: /ログアウト/ }))
     expect(onLogoutClick).toHaveBeenCalledTimes(1)
   })
 
   it('THD-03: ロゴ/アプリ名「たより」を表示する', () => {
-    render(<TopHeader currentUser={makeUser({})} onLogoutClick={vi.fn()} />)
+    render(
+      <TopHeader
+        currentUser={makeUser({})}
+        onHomeClick={vi.fn()}
+        onLogoutClick={vi.fn()}
+      />
+    )
     expect(screen.getByText('たより')).toBeInTheDocument()
   })
 
   it('THD-04: currentUser=null はロゴのみ表示し操作要素を出さず例外も出さない', () => {
     expect(() =>
-      render(<TopHeader currentUser={null} onLogoutClick={vi.fn()} />)
+      render(
+        <TopHeader
+          currentUser={null}
+          onHomeClick={vi.fn()}
+          onLogoutClick={vi.fn()}
+        />
+      )
     ).not.toThrow()
     expect(screen.getByText('たより')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /ログアウト/ })).toBeNull()
@@ -58,6 +82,7 @@ describe('TopHeader (共通ヘッダー)', () => {
     const { unmount } = render(
       <TopHeader
         currentUser={makeUser({ displayName: null })}
+        onHomeClick={vi.fn()}
         onLogoutClick={vi.fn()}
       />
     )
@@ -67,6 +92,7 @@ describe('TopHeader (共通ヘッダー)', () => {
     render(
       <TopHeader
         currentUser={makeUser({ displayName: null, email: null })}
+        onHomeClick={vi.fn()}
         onLogoutClick={vi.fn()}
       />
     )
@@ -77,6 +103,7 @@ describe('TopHeader (共通ヘッダー)', () => {
     render(
       <TopHeader
         currentUser={makeUser({ photoURL: null })}
+        onHomeClick={vi.fn()}
         onLogoutClick={vi.fn()}
       />
     )
@@ -87,7 +114,13 @@ describe('TopHeader (共通ヘッダー)', () => {
 
   it('THD-07: 権限propを受け取らず全ロールで同一表示（純粋表示コンポーネント）', () => {
     // 権限（role/canManage 等）に関わらず同一要素が描画される（権限判定を持たない）
-    render(<TopHeader currentUser={makeUser({})} onLogoutClick={vi.fn()} />)
+    render(
+      <TopHeader
+        currentUser={makeUser({})}
+        onHomeClick={vi.fn()}
+        onLogoutClick={vi.fn()}
+      />
+    )
     expect(
       screen.getByRole('button', { name: /ログアウト/ })
     ).toBeInTheDocument()
@@ -106,5 +139,68 @@ describe('TopHeader (共通ヘッダー)', () => {
     // auth ラッパー・Firestore/Storage SDK からの import を含まない（firebase/auth の type import のみ許容）
     expect(source).not.toMatch(/from\s+['"]@\/lib\/auth['"]/)
     expect(source).not.toMatch(/from\s+['"]firebase\/(firestore|storage)['"]/)
+  })
+
+  it('THD-09: ホームボタンが currentUser 指定時に表示され押下で onHomeClick が1回呼ばれる', async () => {
+    const onHomeClick = vi.fn()
+    render(
+      <TopHeader
+        currentUser={makeUser({})}
+        onHomeClick={onHomeClick}
+        onLogoutClick={vi.fn()}
+      />
+    )
+    const homeButton = screen.getByRole('button', { name: 'ホームへ戻る' })
+    expect(homeButton).toBeInTheDocument()
+    await userEvent.click(homeButton)
+    expect(onHomeClick).toHaveBeenCalledTimes(1)
+  })
+
+  it('THD-10: ホームボタンは currentUser=null でも常に表示され押下で onHomeClick が呼ばれる', async () => {
+    const onHomeClick = vi.fn()
+    render(
+      <TopHeader
+        currentUser={null}
+        onHomeClick={onHomeClick}
+        onLogoutClick={vi.fn()}
+      />
+    )
+    // ログアウトボタン群（currentUser && ...）は非表示だがホームボタンは表示される
+    expect(screen.getByText('たより')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /ログアウト/ })).toBeNull()
+    const homeButton = screen.getByRole('button', { name: 'ホームへ戻る' })
+    await userEvent.click(homeButton)
+    expect(onHomeClick).toHaveBeenCalledTimes(1)
+  })
+
+  it('THD-11: ホームボタンは独立した button でアクセシビリティ属性を持ち、ロゴはリンク化しない', () => {
+    render(
+      <TopHeader
+        currentUser={makeUser({})}
+        onHomeClick={vi.fn()}
+        onLogoutClick={vi.fn()}
+      />
+    )
+    const homeButton = screen.getByRole('button', { name: 'ホームへ戻る' })
+    expect(homeButton).toHaveAttribute('type', 'button')
+    expect(homeButton).toHaveAttribute('aria-label', 'ホームへ戻る')
+    // ロゴ「たより」自体は <a>/リンクになっていない（独立ボタン方針）
+    expect(screen.getByText('たより').closest('a')).toBeNull()
+  })
+
+  it('THD-12: homeDisabled=true のときホームボタンが aria-disabled で押下しても onHomeClick を呼ばない', async () => {
+    const onHomeClick = vi.fn()
+    render(
+      <TopHeader
+        currentUser={makeUser({})}
+        onHomeClick={onHomeClick}
+        onLogoutClick={vi.fn()}
+        homeDisabled
+      />
+    )
+    const homeButton = screen.getByRole('button', { name: 'ホームへ戻る' })
+    expect(homeButton).toHaveAttribute('aria-disabled', 'true')
+    await userEvent.click(homeButton)
+    expect(onHomeClick).not.toHaveBeenCalled()
   })
 })

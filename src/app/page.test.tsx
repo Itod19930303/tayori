@@ -131,4 +131,12 @@ describe('app/page (ホーム)', () => {
     expect(push).not.toHaveBeenCalledWith('/login')
     consoleErrorSpy.mockRestore()
   })
+
+  // --- 共通ヘッダーのホームボタンハンドラ（テスト仕様書 §5.45.1 HMN-HOME）---
+  it('HMN-HOME-01: ホームボタン押下で router.push("/") が1回呼ばれる', async () => {
+    render(<HomePage />)
+    await userEvent.click(screen.getByRole('button', { name: 'ホームへ戻る' }))
+    expect(push).toHaveBeenCalledWith('/')
+    expect(push).toHaveBeenCalledTimes(1)
+  })
 })

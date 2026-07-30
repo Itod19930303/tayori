@@ -69,7 +69,11 @@ export default function NewAlbumPage() {
   // TopHeader を最上部の共通バーとして配置し、既存の作成フォームはその下段に維持する（設計書 4.10）。
   return (
     <div className="flex min-h-screen flex-1 flex-col bg-background">
-      <TopHeader currentUser={currentUser} onLogoutClick={handleLogout} />
+      <TopHeader
+        currentUser={currentUser}
+        onHomeClick={() => router.push('/')}
+        onLogoutClick={handleLogout}
+      />
       {logoutError && (
         <p
           role="alert"
