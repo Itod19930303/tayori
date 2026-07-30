@@ -51,6 +51,9 @@ function LoginPageContent() {
   // false へ戻すことで、returnUrl 復元後にのみ正しい宛先へ遷移させる（レースコンディション対策）。
   const [isProcessingRedirectResult, setIsProcessingRedirectResult] =
     useState(true)
+  // 暫定: モバイル実機での原因調査用。getRedirectResultの生の解決結果を画面に表示する。
+  // 原因特定後に削除すること。
+  const [debugRedirectInfo, setDebugRedirectInfo] = useState<string | null>(null)
 
   // 遷移先。共有リンク経由の場合は returnUrl を優先し、なければホームへ（基本設計書 7.4）。
   const returnUrl = searchParams.get('returnUrl') || '/'
@@ -65,6 +68,10 @@ function LoginPageContent() {
     getRedirectResult(auth)
       .then((result) => {
         if (!active) return
+        // 暫定デバッグ表示: result の有無・uidを画面に残す（原因特定後に削除）。
+        setDebugRedirectInfo(
+          `getRedirectResult: ${result ? `success uid=${result.user.uid}` : 'null'} / saved=${sessionStorage.getItem(RETURN_URL_STORAGE_KEY) ?? '(none)'}`
+        )
         // 非 null はリダイレクトログイン成功。退避した returnUrl を復元（無ければ / へ）。
         if (result) {
           const saved = sessionStorage.getItem(RETURN_URL_STORAGE_KEY)
@@ -134,18 +141,47 @@ function LoginPageContent() {
     }
   }
 
+  // 暫定: モバイル実機での原因調査用オーバーレイ。原因特定後に削除すること。
+  const debugOverlay = debugRedirectInfo ? (
+    <div
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 9999,
+        background: '#fee',
+        color: '#900',
+        fontSize: 12,
+        padding: 8,
+        wordBreak: 'break-all',
+      }}
+    >
+      DEBUG: {debugRedirectInfo} / loading={String(loading)} / currentUser=
+      {currentUser ? currentUser.uid : 'null'}
+    </div>
+  ) : null
+
   // 認証状態確定前はちらつき防止のためスピナーを表示する（基本設計書 7.4）。
   if (loading) {
-    return <LoadingScreen />
+    return (
+      <>
+        {debugOverlay}
+        <LoadingScreen />
+      </>
+    )
   }
 
   // ログイン済みならリダイレクト中のため UI を描画しない。
   if (currentUser) {
-    return null
+    return debugOverlay
   }
 
   return (
-    <LoginTemplate onSignIn={handleSignIn} isLoading={isLoading} error={error} />
+    <>
+      {debugOverlay}
+      <LoginTemplate onSignIn={handleSignIn} isLoading={isLoading} error={error} />
+    </>
   )
 }
 
