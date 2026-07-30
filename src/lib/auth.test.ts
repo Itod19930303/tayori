@@ -72,7 +72,10 @@ describe('lib/auth', () => {
       })
     })
 
-    it('AU-10: モバイル判定時は signInWithRedirect が auth と provider で呼ばれ null を返す', async () => {
+    // 暫定: Vercelホスティングでのサードパーティストレージ制限によりgetRedirectResultが
+    // nullになる既知の制約に該当したため、signInWithGoogleのモバイルリダイレクト分岐を
+    // 一時的に無効化中（全端末ポップアップ）。AU-10〜12は分岐復活時に再度有効化すること。
+    it.skip('AU-10: モバイル判定時は signInWithRedirect が auth と provider で呼ばれ null を返す', async () => {
       isMobileDevice.mockReturnValue(true)
       signInWithRedirect.mockResolvedValue(undefined)
       const { signInWithGoogle } = await import('./auth')
@@ -86,7 +89,7 @@ describe('lib/auth', () => {
       expect(result).toBeNull()
     })
 
-    it('AU-11: モバイル判定時は User を返さず null（型 User|null の境界）', async () => {
+    it.skip('AU-11: モバイル判定時は User を返さず null（型 User|null の境界）', async () => {
       isMobileDevice.mockReturnValue(true)
       signInWithRedirect.mockResolvedValue(undefined)
       const { signInWithGoogle } = await import('./auth')
@@ -94,7 +97,7 @@ describe('lib/auth', () => {
       expect(r).toBeNull()
     })
 
-    it('AU-12: モバイル判定時、signInWithRedirect の reject が呼び出し元へ伝播する', async () => {
+    it.skip('AU-12: モバイル判定時、signInWithRedirect の reject が呼び出し元へ伝播する', async () => {
       isMobileDevice.mockReturnValue(true)
       signInWithRedirect.mockRejectedValue({ code: 'auth/network-request-failed' })
       const { signInWithGoogle } = await import('./auth')
