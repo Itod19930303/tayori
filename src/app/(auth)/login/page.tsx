@@ -78,7 +78,10 @@ function LoginPageContent() {
         // 原因調査用に生のエラーをコンソールへ残す（表示文言は変えない）。
         console.error('getRedirectResult に失敗しました', e)
         const code = (e as { code?: string })?.code ?? ''
-        setError(getAuthErrorMessage(code))
+        const message = getAuthErrorMessage(code)
+        // 暫定: モバイル実機での原因調査のため、画面上にもエラーコードを併記する。
+        // message が空（＝非表示仕様）の場合は従来どおり何も出さない。原因特定後に削除すること。
+        setError(message ? `${message}（${code}）` : message)
       })
       .finally(() => {
         if (!active) return
@@ -122,7 +125,11 @@ function LoginPageContent() {
       // 原因調査用に生のエラーをコンソールへ残す（表示文言は変えない）。
       console.error('Googleログインに失敗しました', e)
       const code = (e as { code?: string })?.code ?? ''
-      setError(getAuthErrorMessage(code))
+      const message = getAuthErrorMessage(code)
+      // 暫定: モバイル実機での原因調査のため、画面上にもエラーコードを併記する。
+      // popup-closed-by-user 等、message が空（＝非表示仕様）の場合は従来どおり何も出さない。
+      // 原因特定後に削除すること。
+      setError(message ? `${message}（${code}）` : message)
       setIsLoading(false)
     }
   }
