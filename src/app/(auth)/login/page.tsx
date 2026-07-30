@@ -75,6 +75,8 @@ function LoginPageContent() {
       .catch((e) => {
         if (!active) return
         // リダイレクト固有コードも既存 default（AUTH_SIGNIN_FAILED）へ集約する（8.3 不変更）。
+        // 原因調査用に生のエラーをコンソールへ残す（表示文言は変えない）。
+        console.error('getRedirectResult に失敗しました', e)
         const code = (e as { code?: string })?.code ?? ''
         setError(getAuthErrorMessage(code))
       })
@@ -117,6 +119,8 @@ function LoginPageContent() {
       await signInWithGoogle()
       // 成功時は currentUser 更新→上記 effect でリダイレクトするため、ここでは何もしない
     } catch (e) {
+      // 原因調査用に生のエラーをコンソールへ残す（表示文言は変えない）。
+      console.error('Googleログインに失敗しました', e)
       const code = (e as { code?: string })?.code ?? ''
       setError(getAuthErrorMessage(code))
       setIsLoading(false)
