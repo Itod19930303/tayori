@@ -13,6 +13,8 @@ import { TopHeader } from '@/components/organisms/TopHeader'
 export interface AuthedShellProps {
   // 表示中のログインユーザー。TopHeader へそのまま委譲し、ヘッダーのユーザー表示に用いる。
   currentUser: User
+  // ホームボタン押下時に呼ぶコールバック（必須・設計書4.10.1）。内部の TopHeader へそのまま中継する。
+  onHomeClick: () => void
   // ログアウトボタン押下時に呼ぶコールバック。実処理（signOutUser・遷移）は page.tsx が担う。
   onLogoutClick: () => void
   // ログアウト失敗時のメッセージ。null のときはエラー帯を描画しない。
@@ -23,13 +25,18 @@ export interface AuthedShellProps {
 
 export function AuthedShell({
   currentUser,
+  onHomeClick,
   onLogoutClick,
   logoutError,
   children,
 }: AuthedShellProps) {
   return (
     <div className="flex min-h-screen flex-1 flex-col bg-background">
-      <TopHeader currentUser={currentUser} onLogoutClick={onLogoutClick} />
+      <TopHeader
+        currentUser={currentUser}
+        onHomeClick={onHomeClick}
+        onLogoutClick={onLogoutClick}
+      />
       {logoutError && (
         <p
           role="alert"

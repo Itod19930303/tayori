@@ -26,6 +26,7 @@ describe('AuthedShell (ログイン済み共通シェル)', () => {
     render(
       <AuthedShell
         currentUser={makeUser()}
+        onHomeClick={vi.fn()}
         onLogoutClick={vi.fn()}
         logoutError={null}
       >
@@ -44,6 +45,7 @@ describe('AuthedShell (ログイン済み共通シェル)', () => {
     render(
       <AuthedShell
         currentUser={makeUser()}
+        onHomeClick={vi.fn()}
         onLogoutClick={onLogoutClick}
         logoutError={null}
       >
@@ -58,6 +60,7 @@ describe('AuthedShell (ログイン済み共通シェル)', () => {
     render(
       <AuthedShell
         currentUser={makeUser()}
+        onHomeClick={vi.fn()}
         onLogoutClick={vi.fn()}
         logoutError={null}
       >
@@ -71,6 +74,7 @@ describe('AuthedShell (ログイン済み共通シェル)', () => {
     render(
       <AuthedShell
         currentUser={makeUser()}
+        onHomeClick={vi.fn()}
         onLogoutClick={vi.fn()}
         logoutError="ログアウトに失敗しました"
       >
@@ -80,6 +84,63 @@ describe('AuthedShell (ログイン済み共通シェル)', () => {
     const alert = screen.getByRole('alert')
     expect(alert).toHaveTextContent('ログアウトに失敗しました')
     expect(alert).toHaveAttribute('aria-live', 'assertive')
+  })
+
+  it('ASH-01: onHomeClick が TopHeader へ中継されホームボタン押下で発火する', async () => {
+    const onHomeClick = vi.fn()
+    render(
+      <AuthedShell
+        currentUser={makeUser()}
+        onHomeClick={onHomeClick}
+        onLogoutClick={vi.fn()}
+        logoutError={null}
+      >
+        <div>本文</div>
+      </AuthedShell>
+    )
+    await userEvent.click(screen.getByRole('button', { name: 'ホームへ戻る' }))
+    expect(onHomeClick).toHaveBeenCalledTimes(1)
+  })
+
+  it('ASH-02: onHomeClick と onLogoutClick が独立して正しいボタンへ結線される', async () => {
+    const onHomeClick = vi.fn()
+    const onLogoutClick = vi.fn()
+    render(
+      <AuthedShell
+        currentUser={makeUser()}
+        onHomeClick={onHomeClick}
+        onLogoutClick={onLogoutClick}
+        logoutError={null}
+      >
+        <div />
+      </AuthedShell>
+    )
+    await userEvent.click(screen.getByRole('button', { name: 'ホームへ戻る' }))
+    await userEvent.click(screen.getByRole('button', { name: /ログアウト/ }))
+    expect(onHomeClick).toHaveBeenCalledTimes(1)
+    expect(onLogoutClick).toHaveBeenCalledTimes(1)
+  })
+
+  it('ASH-03: onHomeClick 追加後も既存中継（currentUser/logoutError/children）が維持される', () => {
+    render(
+      <AuthedShell
+        currentUser={makeUser()}
+        onHomeClick={vi.fn()}
+        onLogoutClick={vi.fn()}
+        logoutError="ログアウトに失敗しました。時間をおいて再試行してください。"
+      >
+        <div data-testid="child">本文</div>
+      </AuthedShell>
+    )
+    expect(screen.getByText('テスト太郎')).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: /ログアウト/ })
+    ).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'ホームへ戻る' })).toBeInTheDocument()
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'ログアウトに失敗しました。時間をおいて再試行してください。'
+    )
+    expect(screen.getByTestId('child')).toHaveTextContent('本文')
   })
 
   it('AS-05: organisms 層のデータ非アクセス制約を維持（Firebase SDK を含まない）', () => {

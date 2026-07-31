@@ -155,6 +155,7 @@ export default function PermissionsPage() {
     return (
       <AuthedShell
         currentUser={currentUser}
+        onHomeClick={() => router.push('/')}
         onLogoutClick={handleLogout}
         logoutError={logoutError}
       >
@@ -168,6 +169,7 @@ export default function PermissionsPage() {
   return (
     <AuthedShell
       currentUser={currentUser}
+      onHomeClick={() => router.push('/')}
       onLogoutClick={handleLogout}
       logoutError={logoutError}
     >

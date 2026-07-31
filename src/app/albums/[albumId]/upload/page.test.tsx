@@ -413,7 +413,7 @@ describe('app/albums/[albumId]/upload/page (アップロード・確定前プレ
     expect(global.URL.revokeObjectURL).toHaveBeenCalled()
   })
 
-  it('UPP-20: 確定前（pending）行が残ったままアンマウントすると残存 previewUrl を件数分解放する', async () => {
+  it('UPP-26: 確定前（pending）行が残ったままアンマウントすると残存 previewUrl を件数分解放する（v3.0・旧UPP-20）', async () => {
     // createObjectURL を呼び出しごとに異なる値へ変え、pending 行の previewUrl を追跡する。
     let seq = 0
     global.URL.createObjectURL = vi.fn(() => `blob:preview-${seq++}`)
@@ -437,6 +437,212 @@ describe('app/albums/[albumId]/upload/page (アップロード・確定前プレ
     expect(revoke).toHaveBeenCalledTimes(2)
     expect(revoke).toHaveBeenCalledWith('blob:preview-0')
     expect(revoke).toHaveBeenCalledWith('blob:preview-1')
+  })
+
+  // --- 共通ヘッダーのホームボタン（離脱確認モーダル・3状態、テスト仕様書 §5.32 UPP-20〜29 / 設計書4.10.2）---
+  const getHomeButton = () =>
+    screen.getByRole('button', { name: 'ホームへ戻る' })
+
+  it('UPP-20: pending 0件のときホームボタン押下でモーダルを介さず即座に router.push("/") する', async () => {
+    render(<UploadPage />)
+    // uploads 空（pending 0件・保存中でもない）
+    await userEvent.click(getHomeButton())
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(push).toHaveBeenCalledWith('/')
+    expect(push).toHaveBeenCalledTimes(1)
+  })
+
+  it('UPP-21: pending 1件以上のときホームボタン押下で LeaveConfirmModal が表示され push は呼ばれない', async () => {
+    render(<UploadPage />)
+    await userEvent.upload(getFileInput(), makeFile('a.jpg', 'image/jpeg'))
+    await userEvent.click(getHomeButton())
+
+    // 離脱確認モーダル（本文＋2ボタン）が表示され、この時点で遷移しない
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '移動する' })).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'キャンセル' })
+    ).toBeInTheDocument()
+    expect(push).not.toHaveBeenCalled()
+  })
+
+  it('UPP-22: 離脱モーダル「移動する」押下で router.push("/") する', async () => {
+    render(<UploadPage />)
+    await userEvent.upload(getFileInput(), makeFile('a.jpg', 'image/jpeg'))
+    await userEvent.click(getHomeButton())
+    await userEvent.click(screen.getByRole('button', { name: '移動する' }))
+    expect(push).toHaveBeenCalledWith('/')
+    expect(push).toHaveBeenCalledTimes(1)
+  })
+
+  it('UPP-23: 離脱モーダル「キャンセル」でモーダルが閉じ pending 行・previewUrl が保持される', async () => {
+    render(<UploadPage />)
+    await userEvent.upload(getFileInput(), makeFile('a.jpg', 'image/jpeg'))
+    await userEvent.click(getHomeButton())
+    // 表示直後は解放されていない
+    const revoke = global.URL.revokeObjectURL as ReturnType<typeof vi.fn>
+    revoke.mockClear()
+
+    await userEvent.click(screen.getByRole('button', { name: 'キャンセル' }))
+
+    // モーダルが閉じ、遷移せず、pending 行（チェックボックス）が残り保存ボタンは活性のまま
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(push).not.toHaveBeenCalled()
+    expect(screen.getByRole('checkbox')).toBeInTheDocument()
+    expect(getSaveButton()).toBeEnabled()
+    // previewUrl の解放（revokeObjectURL）は行われない
+    expect(revoke).not.toHaveBeenCalled()
+  })
+
+  it('UPP-24: pending 複数件でも some 判定で true となりモーダルを表示する', async () => {
+    render(<UploadPage />)
+    await userEvent.upload(getFileInput(), [
+      makeFile('a.jpg', 'image/jpeg'),
+      makeFile('b.png', 'image/png'),
+    ])
+    expect(screen.getAllByRole('checkbox')).toHaveLength(2)
+    await userEvent.click(getHomeButton())
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+    expect(push).not.toHaveBeenCalled()
+  })
+
+  it('UPP-25: pending なし（全件 done / 全件 error）ではモーダルを出さず即遷移する', async () => {
+    // (b) 全件 done: 保存して done にした後にホーム押下
+    mockUploadSuccess()
+    const { unmount } = render(<UploadPage />)
+    await userEvent.upload(getFileInput(), makeFile('a.jpg', 'image/jpeg'))
+    await userEvent.click(getSaveButton())
+    await waitFor(() => expect(screen.getByText(/保存済み/)).toBeInTheDocument())
+
+    await userEvent.click(getHomeButton())
+    // 全件 done 時は UploadCompleteModal（role="dialog"）が出るため、離脱モーダル固有の
+    // 「移動する」ボタンが出ていないことで LeaveConfirmModal 非表示を判定する。
+    expect(screen.queryByRole('button', { name: '移動する' })).toBeNull()
+    expect(push).toHaveBeenCalledWith('/')
+    expect(push).toHaveBeenCalledTimes(1)
+    unmount()
+
+    // (c) 全件 error: createMediaDoc 失敗で error 行にした後にホーム押下
+    vi.clearAllMocks()
+    push.mockClear()
+    const consoleErrorSpy = vi
+      .spyOn(console, 'error')
+      .mockImplementation(() => {})
+    uploadFile.mockResolvedValue({
+      downloadUrl: 'https://storage.example.com/a.jpg',
+      storagePath: 'albums/album-1/uuid/a.jpg',
+      mediaId: 'uuid',
+    })
+    createMediaDoc.mockRejectedValue(new Error('write failed'))
+    render(<UploadPage />)
+    await userEvent.upload(getFileInput(), makeFile('a.jpg', 'image/jpeg'))
+    await userEvent.click(getSaveButton())
+    await waitFor(() =>
+      expect(screen.getByText(/タップして再試行/)).toBeInTheDocument()
+    )
+
+    await userEvent.click(getHomeButton())
+    expect(screen.queryByRole('button', { name: '移動する' })).toBeNull()
+    expect(push).toHaveBeenCalledWith('/')
+    consoleErrorSpy.mockRestore()
+  })
+
+  it('UPP-27: 保存中（uploading）はホームボタンが非活性で push・モーダルのいずれも発生しない', async () => {
+    // uploadFile を resolve/reject させず進行中（uploading）を維持する（UPP-18 と同方式）
+    uploadFile.mockImplementation(
+      (
+        _albumId: string,
+        _file: File,
+        cbs: { onProgress?: (p: number) => void }
+      ) => {
+        cbs.onProgress?.(30)
+        return new Promise(() => {})
+      }
+    )
+    render(<UploadPage />)
+    await userEvent.upload(getFileInput(), makeFile('a.jpg', 'image/jpeg'))
+    await userEvent.click(getSaveButton())
+
+    const home = getHomeButton()
+    await waitFor(() =>
+      expect(home).toHaveAttribute('aria-disabled', 'true')
+    )
+    await userEvent.click(home)
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(push).not.toHaveBeenCalled()
+  })
+
+  it('UPP-28: pending と uploading が同時に存在する場合は非活性が優先されモーダルを出さない', async () => {
+    // 1件目を保存して uploading を維持し、2件目を pending として追加する
+    uploadFile.mockImplementation(
+      (
+        _albumId: string,
+        _file: File,
+        cbs: { onProgress?: (p: number) => void }
+      ) => {
+        cbs.onProgress?.(30)
+        return new Promise(() => {})
+      }
+    )
+    render(<UploadPage />)
+    await userEvent.upload(getFileInput(), makeFile('a.jpg', 'image/jpeg'))
+    await userEvent.click(getSaveButton())
+    // 追加の pending を積む（hasPending===true かつ isUploadInProgress===true）
+    await userEvent.upload(getFileInput(), makeFile('b.png', 'image/png'))
+
+    const home = getHomeButton()
+    await waitFor(() =>
+      expect(home).toHaveAttribute('aria-disabled', 'true')
+    )
+    await userEvent.click(home)
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(push).not.toHaveBeenCalled()
+  })
+
+  it('UPP-29: ホームと「戻る」の非活性化は独立し、完了後は両導線とも活性へ戻る', async () => {
+    // 進行中を制御可能にするための deferred。完了時に resolve して done へ遷移させる。
+    let resolveUpload: (v: unknown) => void = () => {}
+    uploadFile.mockImplementation(
+      (
+        _albumId: string,
+        _file: File,
+        cbs: { onProgress?: (p: number) => void }
+      ) => {
+        cbs.onProgress?.(30)
+        return new Promise((resolve) => {
+          resolveUpload = resolve as (v: unknown) => void
+        })
+      }
+    )
+    createMediaDoc.mockResolvedValue(undefined)
+
+    render(<UploadPage />)
+    await userEvent.upload(getFileInput(), makeFile('a.jpg', 'image/jpeg'))
+    await userEvent.click(getSaveButton())
+
+    const home = getHomeButton()
+    const back = screen.getByRole('button', { name: /に戻る/ })
+    // 進行中は両導線とも非活性
+    await waitFor(() =>
+      expect(home).toHaveAttribute('aria-disabled', 'true')
+    )
+    expect(back).toHaveAttribute('aria-disabled', 'true')
+
+    // アップロード完了 → done へ遷移
+    await act(async () => {
+      resolveUpload({
+        downloadUrl: 'https://storage.example.com/a.jpg',
+        storagePath: 'albums/album-1/uuid/a.jpg',
+        mediaId: 'uuid',
+      })
+    })
+    await waitFor(() => expect(screen.getByText(/保存済み/)).toBeInTheDocument())
+
+    // 完了後は両導線とも活性へ戻る（isUploadInProgress===false）
+    expect(getHomeButton()).toHaveAttribute('aria-disabled', 'false')
+    // ホーム押下で即遷移（pending 0件のため）
+    await userEvent.click(getHomeButton())
+    expect(push).toHaveBeenCalledWith('/')
   })
 
   // --- 共通ヘッダーのログアウトハンドラ（テスト仕様書 §5.45 LGH-UPLOAD）---

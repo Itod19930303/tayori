@@ -249,4 +249,12 @@ describe('app/albums/[albumId]/page (アルバム詳細)', () => {
     expect(push).not.toHaveBeenCalledWith('/login')
     consoleErrorSpy.mockRestore()
   })
+
+  // --- 共通ヘッダーのホームボタンハンドラ（テスト仕様書 §5.45.1 HMN-DETAIL・AuthedShell 経由）---
+  it('HMN-DETAIL-01: ホームボタン押下で router.push("/") が1回呼ばれる', async () => {
+    render(<AlbumDetailPage />)
+    await userEvent.click(screen.getByRole('button', { name: 'ホームへ戻る' }))
+    expect(push).toHaveBeenCalledWith('/')
+    expect(push).toHaveBeenCalledTimes(1)
+  })
 })
