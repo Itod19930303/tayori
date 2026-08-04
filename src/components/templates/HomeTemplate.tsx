@@ -10,9 +10,17 @@ export interface HomeTemplateProps {
   albums: Album[]
   loading: boolean
   onCreateClick: () => void
+  // AlbumGrid の onSelect へ中継する（設計書4.4.1）。template 層は動作対象を明示するため
+  // onSelectAlbum と命名（AlbumDetailTemplate の onSelectMedia に倣う）。遷移は page 層の責務。
+  onSelectAlbum?: (album: Album) => void
 }
 
-export function HomeTemplate({ albums, loading, onCreateClick }: HomeTemplateProps) {
+export function HomeTemplate({
+  albums,
+  loading,
+  onCreateClick,
+  onSelectAlbum,
+}: HomeTemplateProps) {
   // 0件確定時（loading完了かつalbums空）はヘッダーの作成ボタンを隠す。
   // 空状態内に同じ導線のボタンがあるため、両方出すと重複になる。
   // loading中は件数未確定のため、確定後に急にボタンが現れるちらつきを避けて表示しておく。
@@ -35,7 +43,12 @@ export function HomeTemplate({ albums, loading, onCreateClick }: HomeTemplatePro
         )}
       </header>
 
-      <AlbumGrid albums={albums} loading={loading} onCreateClick={onCreateClick} />
+      <AlbumGrid
+        albums={albums}
+        loading={loading}
+        onCreateClick={onCreateClick}
+        onSelect={onSelectAlbum}
+      />
     </div>
   )
 }

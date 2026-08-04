@@ -72,6 +72,9 @@ export default function HomePage() {
         albums={albums}
         loading={albumsLoading}
         onCreateClick={() => router.push('/albums/new')}
+        // アルバムカード押下時の遷移を page 層に集約する（設計書4.4.1）。
+        // molecules/organisms/templates は router へ直接アクセスせず選択の通知のみを行う。
+        onSelectAlbum={(album) => router.push(`/albums/${album.albumId}`)}
       />
     </div>
   )

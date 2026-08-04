@@ -9,9 +9,12 @@ export interface AlbumGridProps {
   albums: Album[]
   loading: boolean
   onCreateClick: () => void
+  // 各 AlbumCard の onSelect へそのまま透過する（設計書4.4.1・MediaGrid の onSelect パターン踏襲）。
+  // 遷移という副作用は page 層に閉じ込め、organism 層は選択の通知を中継するのみ。
+  onSelect?: (album: Album) => void
 }
 
-export function AlbumGrid({ albums, loading, onCreateClick }: AlbumGridProps) {
+export function AlbumGrid({ albums, loading, onCreateClick, onSelect }: AlbumGridProps) {
   // データ未確定（loading）中は空状態ではなくローディングを表示し、
   // 一瞬「まだアルバムがありません」が誤表示されるのを防ぐ。
   if (loading) {
@@ -55,7 +58,7 @@ export function AlbumGrid({ albums, loading, onCreateClick }: AlbumGridProps) {
       className="grid grid-cols-1 gap-gutter sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
     >
       {albums.map((album) => (
-        <AlbumCard key={album.albumId} album={album} />
+        <AlbumCard key={album.albumId} album={album} onSelect={onSelect} />
       ))}
     </div>
   )

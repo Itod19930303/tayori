@@ -139,4 +139,41 @@ describe('app/page (ホーム)', () => {
     expect(push).toHaveBeenCalledWith('/')
     expect(push).toHaveBeenCalledTimes(1)
   })
+
+  // --- アルバムカードのクリック遷移（テスト仕様書 §5.18 HP-07〜09 / 設計書4.4.1）---
+  it('HP-07: アルバムカード押下で /albums/{albumId} へ push 遷移する', async () => {
+    albumsState = {
+      albums: [{ ...mockAlbum, albumId: 'abc123' } as unknown as Album],
+      loading: false,
+    }
+    render(<HomePage />)
+    await userEvent.click(
+      screen.getByRole('button', { name: /湖畔で過ごした夏休み/ })
+    )
+    expect(push).toHaveBeenCalledWith('/albums/abc123')
+    expect(replace).not.toHaveBeenCalled()
+  })
+
+  it('HP-08: 複数アルバムで、押下したカードの albumId で遷移する', async () => {
+    const albumA = { ...mockAlbum, albumId: 'a1', title: 'アルバムA' } as unknown as Album
+    const albumB = { ...mockAlbum, albumId: 'b2', title: 'アルバムB' } as unknown as Album
+    albumsState = { albums: [albumA, albumB], loading: false }
+    render(<HomePage />)
+    await userEvent.click(screen.getByRole('button', { name: /アルバムB/ }))
+    expect(push).toHaveBeenCalledWith('/albums/b2')
+  })
+
+  it('HP-09: 遷移は権限判定を伴わず push のみ（閲覧可否は遷移先ガードが担当）', async () => {
+    albumsState = {
+      albums: [{ ...mockAlbum, albumId: 'abc123' } as unknown as Album],
+      loading: false,
+    }
+    render(<HomePage />)
+    await userEvent.click(
+      screen.getByRole('button', { name: /湖畔で過ごした夏休み/ })
+    )
+    // 権限チェックによる replace（403相当リダイレクト）を挟まず push する
+    expect(push).toHaveBeenCalledWith('/albums/abc123')
+    expect(replace).not.toHaveBeenCalled()
+  })
 })
