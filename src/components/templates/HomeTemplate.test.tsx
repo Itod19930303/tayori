@@ -60,18 +60,49 @@ describe('components/templates/HomeTemplate', () => {
     expect(onCreateClick).toHaveBeenCalledTimes(1)
   })
 
-  it('HT-05: アルバム0件（loading=false）ではヘッダーの作成ボタンを表示しない（空状態内のボタンと重複させないため）', () => {
+  // 補足: 以下2件はヘッダー作成ボタンの表示制御（showHeaderCreateButton）の検証。
+  // テスト仕様書 §5.16 で HT-07/HT-08 として正式採番されたため、当該IDを冒頭に付与する。
+  it('HT-07: アルバム0件（loading=false）ではヘッダーの作成ボタンを表示しない（空状態内のボタンと重複させないため）', () => {
     render(<HomeTemplate albums={[]} loading={false} onCreateClick={vi.fn()} />)
     expect(
       screen.queryByRole('button', { name: /新しいアルバム/ })
     ).not.toBeInTheDocument()
   })
 
-  it('HT-06: loading=true の間は0件でもヘッダーの作成ボタンを表示する（読み込み確定前のちらつき防止）', () => {
+  it('HT-08: loading=true の間は0件でもヘッダーの作成ボタンを表示する（読み込み確定前のちらつき防止）', () => {
     render(<HomeTemplate albums={[]} loading={true} onCreateClick={vi.fn()} />)
     expect(
       screen.getByRole('button', { name: /新しいアルバム/ })
     ).toBeInTheDocument()
+  })
+
+  it('HT-05: カードクリックで onSelectAlbum が該当アルバムで呼ばれる（AlbumGrid の onSelect へ中継）', async () => {
+    const album = makeAlbum('湖畔で過ごした夏休み')
+    const onSelectAlbum = vi.fn()
+    render(
+      <HomeTemplate
+        albums={[album]}
+        loading={false}
+        onCreateClick={vi.fn()}
+        onSelectAlbum={onSelectAlbum}
+      />
+    )
+    await userEvent.click(screen.getByRole('button', { name: /湖畔で過ごした夏休み/ }))
+    expect(onSelectAlbum).toHaveBeenCalledTimes(1)
+    expect(onSelectAlbum).toHaveBeenCalledWith(album)
+  })
+
+  it('HT-06: onSelectAlbum 未指定時にカードをクリックしてもエラーにならない', async () => {
+    render(
+      <HomeTemplate
+        albums={[makeAlbum('湖畔で過ごした夏休み')]}
+        loading={false}
+        onCreateClick={vi.fn()}
+      />
+    )
+    await userEvent.click(screen.getByRole('button', { name: /湖畔で過ごした夏休み/ }))
+    // 未接続でもクラッシュせず描画を維持する
+    expect(screen.getByText('湖畔で過ごした夏休み')).toBeInTheDocument()
   })
 
   it('HT-03: albums/loading を AlbumGrid へ透過的に渡す', () => {

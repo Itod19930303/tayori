@@ -143,8 +143,11 @@
     0 2px 4px rgba(0, 0, 0, 0.02);
 }
 
-/* Material Symbols の既定バリエーション（3.8） */
+/* Material Symbols の既定バリエーション（3.8）。
+   font-family 未指定だとGoogle Fontsを読み込んでいてもアイコン名の文字列が
+   そのままテキスト表示されてしまうため明示する。 */
 .material-symbols-outlined {
+  font-family: "Material Symbols Outlined";
   font-variation-settings:
     "FILL" 0,
     "wght" 400,

@@ -88,4 +88,35 @@ describe('components/organisms/AlbumGrid', () => {
     expect(grid?.className).toContain('lg:grid-cols-4')
     expect(grid?.className).toContain('gap-gutter')
   })
+
+  it('AG-07: カードクリックで onSelect が該当アルバムで呼ばれる（各AlbumCardへ透過）', async () => {
+    const user = userEvent.setup()
+    const album = makeAlbum('a1', '夏休み')
+    const onSelect = vi.fn()
+    render(
+      <AlbumGrid albums={[album]} loading={false} onCreateClick={vi.fn()} onSelect={onSelect} />
+    )
+    await user.click(screen.getByRole('button', { name: /夏休み/ }))
+    expect(onSelect).toHaveBeenCalledTimes(1)
+    expect(onSelect).toHaveBeenCalledWith(album)
+  })
+
+  it('AG-08: 複数アルバムで、クリックしたカードに対応する正しいアルバムが渡される', async () => {
+    const user = userEvent.setup()
+    const albumA = makeAlbum('a1', 'アルバムA')
+    const albumB = makeAlbum('b2', 'アルバムB')
+    const albumC = makeAlbum('c3', 'アルバムC')
+    const onSelect = vi.fn()
+    render(
+      <AlbumGrid
+        albums={[albumA, albumB, albumC]}
+        loading={false}
+        onCreateClick={vi.fn()}
+        onSelect={onSelect}
+      />
+    )
+    await user.click(screen.getByRole('button', { name: /アルバムB/ }))
+    expect(onSelect).toHaveBeenCalledTimes(1)
+    expect(onSelect).toHaveBeenCalledWith(albumB)
+  })
 })

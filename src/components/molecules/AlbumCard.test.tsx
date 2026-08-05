@@ -1,5 +1,6 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import type { Album, AlbumMember } from '@/types'
 import { AlbumCard } from './AlbumCard'
 
@@ -84,5 +85,44 @@ describe('components/molecules/AlbumCard', () => {
     render(<AlbumCard album={makeAlbum()} />)
     // プレースホルダー領域を data 属性で識別する（実画像を持たない）
     expect(screen.getByTestId('album-cover-placeholder')).toBeInTheDocument()
+  })
+
+  it('ACD-07: カードクリックで onSelect が該当アルバムを引数に1回呼ばれる', async () => {
+    const album = makeAlbum()
+    const onSelect = vi.fn()
+    render(<AlbumCard album={album} onSelect={onSelect} />)
+    await userEvent.click(screen.getByRole('button'))
+    expect(onSelect).toHaveBeenCalledTimes(1)
+    expect(onSelect).toHaveBeenCalledWith(album)
+  })
+
+  it('ACD-08: onSelect 未指定時にクリックしても例外にならず描画を維持する', async () => {
+    render(<AlbumCard album={makeAlbum()} />)
+    const card = screen.getByRole('button')
+    await userEvent.click(card)
+    // オプショナルチェーン防御で例外が出ず、カード内容が保持される
+    expect(screen.getByText('湖畔で過ごした夏休み')).toBeInTheDocument()
+  })
+
+  it('ACD-09: ルートが <button type="button"> でカードデザインと表示内容を非破壊で維持する', () => {
+    const album = makeAlbum({ coverImageUrl: 'https://example.com/cover.jpg' })
+    render(<AlbumCard album={album} />)
+    const card = screen.getByRole('button')
+    // ネイティブボタンセマンティクス（role="button" は明示しない）
+    expect(card.tagName).toBe('BUTTON')
+    expect(card).toHaveAttribute('type', 'button')
+    expect(card).not.toHaveAttribute('role')
+    // カードデザインの維持
+    expect(card.className).toContain('rounded-xl')
+    expect(card.className).toContain('custom-shadow')
+    expect(card.className).toContain('overflow-hidden')
+    expect(card.className).toContain('cursor-pointer')
+    // 表示内容（タイトル・更新日時・メンバー数・表紙img[alt]）がボタン内に維持される
+    expect(card).toContainElement(screen.getByText('湖畔で過ごした夏休み'))
+    expect(card).toContainElement(screen.getByText(/1970/))
+    expect(card).toContainElement(screen.getByText('1'))
+    const img = screen.getByRole('img')
+    expect(card).toContainElement(img)
+    expect(img).toHaveAttribute('alt')
   })
 })
