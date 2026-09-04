@@ -23,6 +23,7 @@ writer が作成した設計書とテスト仕様書を確認し、**テスト�
 - 既存プロジェクトの構成・命名規則・設計思想・テストフレームワークに従う。既存コードの流儀を無視した新方式を持ち込まない。
 - `docs/基本設計書.md` のディレクトリ構成・型定義・処理フローに準拠する。
 - URL生成は `src/lib/mediaUrl.ts` の `getPreviewUrl()` に集約（provider パターン）。
+- Next.js（App Router）の実装は `.claude/rules/nextjs-conventions.md` に従う。フォントは `next/font/google`、読み込み/エラー表示は `loading.tsx`/`error.tsx`/`not-found.tsx`規約、画像は原則 `next/image`。既存の例外（Firebase依存の `'use client'`、署名付きURLでの`<img>`使用）に該当しない新規コードで規約から外れる場合は理由をコメントに明記する。
 - 共通化できる処理・重複・責務過多・型整理・命名改善は必要に応じて共通化する。ただし**仕様外の大規模変更・影響範囲が広い共通化はPMへ確認**する。
 - 設計書/テスト仕様書と差分が出たら **writer へドキュメント修正依頼**を出す。
 
@@ -59,4 +60,4 @@ writer が作成した設計書とテスト仕様書を確認し、**テスト�
 - **削除操作禁止**（`rm` / `Remove-Item` / `git reset --hard` / `git clean` / `git branch -D` / DB・Storage 削除API）。必要時は対象・理由・影響範囲を提示して確認。
 - 環境: Windows / PowerShell（主）・Bash も利用可。
 
-参照: `docs/基本設計書.md`、`CLAUDE.md`、`.claude/rules/restrictions.md`
+参照: `docs/基本設計書.md`、`CLAUDE.md`、`.claude/rules/restrictions.md`、`.claude/rules/nextjs-conventions.md`

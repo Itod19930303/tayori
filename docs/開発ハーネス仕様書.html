@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>tayori — 開発ハーネス仕様書</title>
+<style>
+  :root {
+    --bg: #fbfaf8;
+    --surface: #ffffff;
+    --ink: #24211d;
+    --ink-soft: #5b564e;
+    --line: #e6e1d8;
+    --accent: #8a5a3b;
+    --accent-soft: #f1e6da;
+    --pm: #6b7c8c;
+    --writer: #8a6fa0;
+    --developer: #4f8a6d;
+    --review: #b0793f;
+    --review-final: #8a5a3b;
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Segoe UI", "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.75;
+  }
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--line);
+    padding: 40px max(24px, calc(50% - 420px));
+  }
+  header h1 {
+    margin: 0 0 6px;
+    font-size: 1.9rem;
+    letter-spacing: 0.02em;
+  }
+  header p.sub {
+    margin: 0;
+    color: var(--ink-soft);
+    font-size: 0.95rem;
+  }
+  header p.meta {
+    margin-top: 14px;
+    font-size: 0.85rem;
+    color: var(--ink-soft);
+  }
+  main {
+    max-width: 840px;
+    margin: 0 auto;
+    padding: 32px 24px 100px;
+  }
+  nav.toc {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    margin-bottom: 40px;
+  }
+  nav.toc h2 { font-size: 1rem; margin: 0 0 10px; color: var(--ink-soft); }
+  nav.toc ol { margin: 0; padding-left: 1.2em; columns: 2; gap: 24px; }
+  nav.toc li { margin-bottom: 6px; break-inside: avoid; }
+  nav.toc a { color: var(--accent); text-decoration: none; font-size: 0.92rem; }
+  nav.toc a:hover { text-decoration: underline; }
+
+  section { margin-bottom: 52px; }
+  section h2 {
+    font-size: 1.3rem;
+    border-left: 4px solid var(--accent);
+    padding-left: 12px;
+    margin-bottom: 16px;
+  }
+  section h3 {
+    font-size: 1.05rem;
+    margin: 28px 0 10px;
+    color: var(--ink);
+  }
+  p { color: var(--ink-soft); }
+  code {
+    background: var(--accent-soft);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 0.88em;
+    color: #6a3f22;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    overflow: hidden;
+    font-size: 0.9rem;
+    margin: 12px 0 20px;
+  }
+  th, td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--line);
+    text-align: left;
+    vertical-align: top;
+  }
+  th {
+    background: #f4f0ea;
+    font-weight: 600;
+    color: var(--ink);
+    white-space: nowrap;
+  }
+  tr:last-child td { border-bottom: none; }
+
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 14px;
+    margin: 16px 0 24px;
+  }
+  .agent-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-left: 5px solid var(--accent);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+  }
+  .agent-card.pm { border-left-color: var(--pm); }
+  .agent-card.writer { border-left-color: var(--writer); }
+  .agent-card.developer { border-left-color: var(--developer); }
+  .agent-card.review { border-left-color: var(--review); }
+  .agent-card.review-final { border-left-color: var(--review-final); }
+  .agent-card h4 { margin: 0 0 4px; font-size: 1rem; }
+  .agent-card .badge {
+    display: inline-block;
+    font-size: 0.72rem;
+    color: var(--ink-soft);
+    background: var(--accent-soft);
+    border-radius: 999px;
+    padding: 2px 10px;
+    margin-bottom: 8px;
+  }
+  .agent-card p { margin: 0; font-size: 0.86rem; color: var(--ink-soft); }
+
+  .flow {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin: 20px 0 30px;
+  }
+  .flow-step {
+    display: grid;
+    grid-template-columns: 96px 1fr;
+    gap: 16px;
+    padding: 14px 0;
+    border-bottom: 1px dashed var(--line);
+  }
+  .flow-step:last-child { border-bottom: none; }
+  .flow-num {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .flow-num .dot {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.85rem;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+  .flow-step.pm .dot { background: var(--pm); }
+  .flow-step.writer .dot { background: var(--writer); }
+  .flow-step.developer .dot { background: var(--developer); }
+  .flow-step.review .dot { background: var(--review); }
+  .flow-step.review-final .dot { background: var(--review-final); }
+  .flow-body h4 { margin: 4px 0 4px; font-size: 0.98rem; }
+  .flow-body .role {
+    font-size: 0.72rem;
+    color: var(--ink-soft);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .flow-body p { margin: 6px 0 0; font-size: 0.88rem; }
+  .flow-body ul { margin: 8px 0 0; padding-left: 1.1em; font-size: 0.86rem; color: var(--ink-soft); }
+
+  .note {
+    background: var(--accent-soft);
+    border-radius: var(--radius);
+    padding: 14px 18px;
+    font-size: 0.87rem;
+    color: #6a3f22;
+    margin: 14px 0;
+  }
+  .warn {
+    background: #fbe9e7;
+    border-left: 4px solid #c0553a;
+    border-radius: 6px;
+    padding: 14px 18px;
+    font-size: 0.87rem;
+    color: #7a3323;
+    margin: 14px 0;
+  }
+  .file-tree {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    font-size: 0.85rem;
+    font-family: "Consolas", "SFMono-Regular", monospace;
+    color: var(--ink-soft);
+    white-space: pre;
+    overflow-x: auto;
+  }
+  footer {
+    text-align: center;
+    font-size: 0.8rem;
+    color: var(--ink-soft);
+    padding: 30px 24px 60px;
+  }
+  @media (max-width: 600px) {
+    nav.toc ol { columns: 1; }
+    .flow-step { grid-template-columns: 40px 1fr; }
+    .flow-num .dot { width: 26px; height: 26px; font-size: 0.75rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>tayori 開発ハーネス仕様書</h1>
+  <p class="sub">Claude Code サブエージェント構成とワークフローの現状仕様</p>
+  <p class="meta">対象リポジトリ: tayori（画像・動画共有アプリ） / 起動コマンド: <code>/workflow &lt;タスク&gt;</code></p>
+</header>
+
+<main>
+
+<nav class="toc" aria-label="目次">
+  <h2>目次</h2>
+  <ol>
+    <li><a href="#overview">1. ハーネスの全体構成</a></li>
+    <li><a href="#agents">2. エージェント一覧</a></li>
+    <li><a href="#workflow">3. ワークフロー（/workflow）</a></li>
+    <li><a href="#handoff">4. 差戻しルール</a></li>
+    <li><a href="#rules">5. 実装・設計ルール</a></li>
+    <li><a href="#restrictions">6. 制約・禁止事項</a></li>
+    <li><a href="#quality">7. 品質基準</a></li>
+    <li><a href="#files">8. 設定ファイル一覧</a></li>
+  </ol>
+</nav>
+
+<section id="overview">
+  <h2>1. ハーネスの全体構成</h2>
+  <p>
+    本プロジェクトは Claude Code のサブエージェント機能を用い、<strong>PM → writer → developer →
+    ソースコードレビュワー → 仕様レビュワー → 総合レビュワー</strong> の6役割で開発を進める。
+    各役割の振る舞いは <code>.claude/agents/*.md</code> にエージェント定義として、
+    一連の流れは <code>.claude/commands/workflow.md</code> にスラッシュコマンド
+    <code>/workflow</code> として定義されている。プロジェクト共通の方針は
+    <code>CLAUDE.md</code>（リポジトリ直下）と <code>.claude/rules/*.md</code> に分割して管理する。
+  </p>
+  <div class="note">
+    設計上のポイント: レビュー工程は「コード品質」「仕様適合性」「セキュリティ/性能/回帰」の3観点に
+    分離されており、各レビュワーは自分の担当観点以外を検査対象から明示的に除外する。
+    これにより指摘の重複や責任の曖昧化を防いでいる。
+  </div>
+</section>
+
+<section id="agents">
+  <h2>2. エージェント一覧</h2>
+  <p>以下は <code>.claude/agents/</code> 配下に定義された6エージェント。<code>tools</code> は利用可能なツール、<code>model</code> は使用モデルを示す。</p>
+
+  <div class="card-grid">
+    <div class="agent-card pm">
+      <span class="badge">tools: Read, Glob, Grep, TodoWrite / model: sonnet</span>
+      <h4>pm — プロジェクトマネージャー</h4>
+      <p>要件（目的・対象範囲・制約・完了条件・影響範囲）の整理、各役割へのタスク割振り、品質ゲート判定、最終報告の作成を担う。全工程の起点と終点。</p>
+    </div>
+    <div class="agent-card writer">
+      <span class="badge">tools: Read, Glob, Grep, Write, Edit / model: opus</span>
+      <h4>writer — 設計担当</h4>
+      <p>設計書（データ設計・処理フロー・エラー処理・権限・完了条件）とテスト仕様書（正常系/異常系/境界値/権限/回帰の5観点）を作成。実装都合の差分が出た場合はドキュメントを更新する。</p>
+    </div>
+    <div class="agent-card developer">
+      <span class="badge">tools: Read, Glob, Grep, Write, Edit, Bash, PowerShell, TodoWrite / model: opus</span>
+      <h4>developer — 実装担当</h4>
+      <p>テストコードを先に作成し失敗を確認してから実装するTDDを徹底。カバレッジ90%以上を目標とし、未達時は理由・リスク・追加方針をPMへ報告する。</p>
+    </div>
+    <div class="agent-card review">
+      <span class="badge">tools: Read, Glob, Grep, Bash, PowerShell / model: sonnet</span>
+      <h4>code-quality-reviewer — ソースコードレビュワー</h4>
+      <p>ネストの深さ・可読性・命名・デッドコード・重複・メソッド粒度・責務分離・テスト容易性・Next.js規約など、コードの技術的品質のみを検査する。仕様適合性は対象外。</p>
+    </div>
+    <div class="agent-card review">
+      <span class="badge">tools: Read, Glob, Grep / model: sonnet</span>
+      <h4>spec-reviewer — 仕様レビュワー</h4>
+      <p>実装・テストコードが設計書/テスト仕様書/完了条件と乖離していないかのみを検査する。コードの可読性等の技術品質は対象外。</p>
+    </div>
+    <div class="agent-card review-final">
+      <span class="badge">tools: Read, Glob, Grep, Bash, PowerShell / model: sonnet</span>
+      <h4>reviewer — 総合レビュワー</h4>
+      <p>ソースコードレビュワー・仕様レビュワーの結果を踏まえ、セキュリティ・パフォーマンス・回帰影響を検査したうえで最終合否を判定する。</p>
+    </div>
+  </div>
+</section>
+
+<section id="workflow">
+  <h2>3. ワークフロー（/workflow）</h2>
+  <p><code>/workflow &lt;タスク&gt;</code> で起動すると、以下の10ステップで進行する。</p>
+
+  <div class="flow">
+    <div class="flow-step pm">
+      <div class="flow-num"><span class="dot">1</span></div>
+      <div class="flow-body">
+        <span class="role">PM</span>
+        <h4>要件確認</h4>
+        <p>目的・背景・対象範囲/対象外・制約・完了条件・影響範囲を整理し、曖昧な点はユーザーへ確認する。</p>
+      </div>
+    </div>
+    <div class="flow-step writer">
+      <div class="flow-num"><span class="dot">2</span></div>
+      <div class="flow-body">
+        <span class="role">writer</span>
+        <h4>設計書作成</h4>
+        <p>対象機能/画面/API・データ設計・処理フロー・エラー処理・権限・影響範囲・完了条件を、developerが迷わない粒度で作成。</p>
+      </div>
+    </div>
+    <div class="flow-step writer">
+      <div class="flow-num"><span class="dot">3</span></div>
+      <div class="flow-body">
+        <span class="role">writer</span>
+        <h4>テスト仕様書作成</h4>
+        <p>正常系・異常系・境界値・権限・回帰の5観点を必ず含める。</p>
+      </div>
+    </div>
+    <div class="flow-step developer">
+      <div class="flow-num"><span class="dot">4</span></div>
+      <div class="flow-body">
+        <span class="role">developer</span>
+        <h4>テストコード作成（先行・Red確認）</h4>
+        <p>実装前にテストを書き、まず失敗することを確認してから次工程へ進む（TDD）。</p>
+      </div>
+    </div>
+    <div class="flow-step developer">
+      <div class="flow-num"><span class="dot">5</span></div>
+      <div class="flow-body">
+        <span class="role">developer</span>
+        <h4>実装（Green/Refactor）</h4>
+        <ul>
+          <li>既存の構成・命名・テストフレームワークに従う</li>
+          <li>共通化できる処理は共通化する（影響範囲が広い場合はPMへ確認）</li>
+          <li>設計書との差分が出た場合はwriterへドキュメント修正依頼</li>
+          <li>Next.js実装は <code>.claude/rules/nextjs-conventions.md</code> に従う</li>
+        </ul>
+      </div>
+    </div>
+    <div class="flow-step developer">
+      <div class="flow-num"><span class="dot">6</span></div>
+      <div class="flow-body">
+        <span class="role">developer</span>
+        <h4>テスト実行・カバレッジ確認</h4>
+        <p>カバレッジ目標90%以上。未達の場合は現在値・未達理由・リスク・追加テスト方針をPMへ報告。</p>
+      </div>
+    </div>
+    <div class="flow-step review">
+      <div class="flow-num"><span class="dot">7</span></div>
+      <div class="flow-body">
+        <span class="role">code-quality-reviewer</span>
+        <h4>コード品質レビュー</h4>
+        <p>ネスト深さ・可読性・命名・デッドコード・重複/共通化・責務分離・テスト容易性・Next.js規約を検査。NGはdeveloperへ差し戻し、再度Step 7を実施。</p>
+      </div>
+    </div>
+    <div class="flow-step review">
+      <div class="flow-num"><span class="dot">8</span></div>
+      <div class="flow-body">
+        <span class="role">spec-reviewer</span>
+        <h4>仕様適合性レビュー</h4>
+        <p>設計書どおりの対象範囲/データ設計/処理フロー/権限か、テスト仕様書5観点の充足、完了条件の達成を検査。</p>
+      </div>
+    </div>
+    <div class="flow-step review-final">
+      <div class="flow-num"><span class="dot">9</span></div>
+      <div class="flow-body">
+        <span class="role">reviewer（総合）</span>
+        <h4>最終レビュー</h4>
+        <p>セキュリティ・パフォーマンス・回帰影響を検査。Step 7/8にNGがあれば集約してPMへNG報告。3者すべて承認で合格。</p>
+      </div>
+    </div>
+    <div class="flow-step pm">
+      <div class="flow-num"><span class="dot">10</span></div>
+      <div class="flow-body">
+        <span class="role">PM</span>
+        <h4>最終確認</h4>
+        <p>実施内容・変更ファイル・テスト結果/カバレッジ・レビュー結果・残課題/リスク・次の提案をまとめてユーザーへ報告。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="handoff">
+  <h2>4. 差戻しルール</h2>
+  <p>各レビュワーがNG判定を出す場合は、以下の項目を明示したうえで担当へ差し戻す。</p>
+  <table>
+    <thead><tr><th>項目</th><th>内容</th></tr></thead>
+    <tbody>
+      <tr><td>依頼先</td><td>PM / writer / developer のいずれか</td></tr>
+      <tr><td>該当箇所</td><td>ファイルパス:行番号（仕様レビューは対応する設計書/テスト仕様書の該当箇所も併記）</td></tr>
+      <tr><td>問題</td><td>何が問題か</td></tr>
+      <tr><td>理由</td><td>なぜ修正が必要か</td></tr>
+      <tr><td>期待する修正</td><td>どう直すべきか</td></tr>
+      <tr><td>確認方法</td><td>修正後に何を確認するか</td></tr>
+    </tbody>
+  </table>
+  <p>判断基準: 仕様・設計の問題は <strong>writer</strong>、実装・テストの問題は <strong>developer</strong>、スコープ・判断の問題は <strong>PM</strong> へ。</p>
+</section>
+
+<section id="rules">
+  <h2>5. 実装・設計ルール（.claude/rules/）</h2>
+
+  <h3>5.1 development.md — 実装ルール</h3>
+  <table>
+    <thead><tr><th>項目</th><th>内容</th></tr></thead>
+    <tbody>
+      <tr><td>TDD</td><td>設計書・テスト仕様書 → テストコード（Red確認） → 実装（Green） → リファクタリング。テストフレームワークはVitest + React Testing Library、カバレッジ目標90%以上</td></tr>
+      <tr><td>共通化の判断基準</td><td>「重複回数」ではなく「同じ意図（同じ理由で変更されるか）」で判断。4項目チェックリスト（入出力の型/エラー処理方針/変更トリガー/業務ルールの有無）をすべて満たす場合のみ共通化。重要処理は2箇所目、一般処理は3箇所目（Rule of Three）が目安。迷ったら共通化を見送る</td></tr>
+      <tr><td>関数定義スタイル</td><td>トップレベルの関数（Reactコンポーネント本体・カスタムフック・<code>src/lib/</code>の公開関数等）は<code>function</code>宣言。内部のコールバック等はアロー関数でよい</td></tr>
+      <tr><td>実装コメント</td><td>ファイル/クラス/関数単位で「何を・なぜ」実装したかを記載。TODOや一時的なメモは残さない（判断経緯はPR説明等コード外に記録）</td></tr>
+    </tbody>
+  </table>
+
+  <h3>5.2 atomic-design.md — コンポーネント設計ルール</h3>
+  <table>
+    <thead><tr><th>層</th><th>判定基準</th></tr></thead>
+    <tbody>
+      <tr><td>atoms</td><td>これ以上分解すると意味を失う最小単位。ビジネスロジックを持たない（shadcn/ui生成物もここ）</td></tr>
+      <tr><td>molecules</td><td>atomsの組み合わせで1つの意味的単位。propsのみで完結（データ取得しない）</td></tr>
+      <tr><td>organisms</td><td>独立したUIセクション。ローカルstateは可だが<strong>Firestore/Storageへの直接アクセス禁止</strong></td></tr>
+      <tr><td>templates</td><td>organismsを配置したレイアウト骨格。実データを持たない</td></tr>
+      <tr><td>pages（page.tsx）</td><td><code>hooks/</code>経由で実データを取得し、templateへpropsとして渡す</td></tr>
+    </tbody>
+  </table>
+  <p>ドメイン別フォルダ（<code>album/</code> 等）は採用せず、配置判断は常にAtomic Designの階層のみで行う。</p>
+
+  <h3>5.3 nextjs-conventions.md — Next.js実装規約</h3>
+  <table>
+    <thead><tr><th>項目</th><th>原則</th><th>本プロジェクトの例外</th></tr></thead>
+    <tbody>
+      <tr><td>フォント</td><td><code>next/font/google</code>を使用（CDN直読み禁止）</td><td>Material Symbols等の可変フォントで非対応の場合はコードコメントで明記して例外扱い</td></tr>
+      <tr><td>読み込み/エラー表示</td><td><code>loading.tsx</code>/<code>error.tsx</code>/<code>not-found.tsx</code>のファイル規約に従う</td><td>403/404はデータ依存のビジネスロジック判定のため、既存の<code>NoticeScreen</code>出し分けパターンを踏襲してよい</td></tr>
+      <tr><td>Server/Client Components</td><td>可能な箇所はServer Componentsでデータ取得</td><td>Firebase Auth/Firestoreのリアルタイム購読に依存するため、<code>page.tsx</code>はすべて<code>'use client'</code>を許容</td></tr>
+      <tr><td>画像表示</td><td><code>next/image</code>を使用</td><td>Firebase Storageの署名付きURLを表示する箇所（AlbumCard/MediaCell/UploadItem等）と外部プロフィール画像は<code>&lt;img&gt;</code>を許容</td></tr>
+    </tbody>
+  </table>
+  <p>例外に該当しない新規コードでの違反（未使用の<code>next/font/google</code>、独自スピナー実装、根拠コメントのない<code>next/image</code>不使用、安易な<code>'use client'</code>）はdeveloperへの差戻し対象。</p>
+</section>
+
+<section id="restrictions">
+  <h2>6. 制約・禁止事項（restrictions.md）</h2>
+  <div class="warn">
+    <strong>Git push / fetch 禁止</strong> — <code>git push</code>・<code>git fetch</code>・<code>gh pr create</code>/<code>merge</code>/<code>release</code> は料金発生のため、ユーザーの明示的指示なしに実行しない（<code>git pull</code> は可）。
+  </div>
+  <div class="warn">
+    <strong>削除操作禁止</strong> — ファイル・ブランチ削除、<code>git reset --hard</code>/<code>git clean -f</code>、DB/Storageの削除APIは、対象・理由・影響範囲を提示してユーザー確認を取ってから実行する。
+  </div>
+  <div class="note">
+    <strong>依存関係確認手順</strong> — ソースコード修正前に「変更対象の特定 → 依存関係の調査 → 影響範囲の報告」を行う。影響が広い場合は事前にリグレッションテスト計画をユーザーと合意する。
+  </div>
+</section>
+
+<section id="quality">
+  <h2>7. 品質基準</h2>
+  <table>
+    <thead><tr><th>項目</th><th>基準</th></tr></thead>
+    <tbody>
+      <tr><td>テストカバレッジ</td><td>90%以上（未達時は理由・リスク・追加テスト方針をPMへ報告）</td></tr>
+      <tr><td>セキュリティ</td><td>Firebase Security Rulesでアルバムメンバーのみ読み書き可</td></tr>
+      <tr><td>UIトーン</td><td>Google Photos × Notionの中間（軽量・整理しやすい）</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="files">
+  <h2>8. 設定ファイル一覧</h2>
+  <div class="file-tree">CLAUDE.md                              — プロジェクト全体方針・技術スタック・ワークフロー概要
+.claude/
+├── commands/
+│   └── workflow.md                  — /workflow スラッシュコマンド定義（10ステップ）
+├── agents/
+│   ├── pm.md                        — PM
+│   ├── writer.md                    — 設計担当
+│   ├── developer.md                 — 実装担当
+│   ├── code-quality-reviewer.md     — ソースコードレビュワー
+│   ├── spec-reviewer.md             — 仕様レビュワー
+│   └── reviewer.md                  — 総合レビュワー
+└── rules/
+    ├── development.md               — TDD・共通化基準・関数定義・コメントルール
+    ├── atomic-design.md             — コンポーネント設計（Atomic Design）
+    ├── nextjs-conventions.md        — Next.js（App Router）実装規約
+    └── restrictions.md              — Git操作・削除操作の禁止、依存関係確認手順</div>
+</section>
+
+</main>
+
+<footer>
+  tayori — 画像・動画共有アプリ / 本ドキュメントは <code>.claude/</code> 配下の定義ファイルをもとに作成
+</footer>
+
+</body>
+</html>
