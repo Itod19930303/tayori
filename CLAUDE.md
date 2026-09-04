@@ -43,7 +43,7 @@ SNSではなく「業務ツール」として設計する。
 
 ## 開発ワークフロー
 
-**PM → writer → developer → レビュワー** の4役割で進める。  
+**PM → writer → developer → ソースコードレビュワー → 仕様レビュワー → 総合レビュワー** の6役割で進める。  
 詳細: [`.claude/commands/workflow.md`](.claude/commands/workflow.md) — `/workflow <タスク>` で起動
 
 | 役割 | 主な責務 |
@@ -51,7 +51,9 @@ SNSではなく「業務ツール」として設計する。
 | PM | 要件確認・タスク割振・最終確認・リスク整理 |
 | writer | 設計書・テスト仕様書の作成と更新 |
 | developer | テストコード先行実装・カバレッジ90%以上 |
-| レビュワー | 仕様適合・品質・セキュリティ検査・差戻し判定 |
+| ソースコードレビュワー | ネスト・可読性・命名・デッドコード等コード品質の検査 |
+| 仕様レビュワー | 設計書・テスト仕様書との乖離検査 |
+| 総合レビュワー | セキュリティ・パフォーマンス・回帰影響の検査と最終合否判定 |
 
 ## 品質基準
 
@@ -69,6 +71,7 @@ SNSではなく「業務ツール」として設計する。
 
 実装の進め方（TDD・共通化基準・コメントルール）は [`.claude/rules/development.md`](.claude/rules/development.md) を参照。
 コンポーネント設計（Atomic Design）は [`.claude/rules/atomic-design.md`](.claude/rules/atomic-design.md) を参照。
+Next.js（App Router）のベストプラクティス（`next/font`・`loading.tsx`/`error.tsx`規約・Server/Client Componentsの使い分け・`next/image`）は [`.claude/rules/nextjs-conventions.md`](.claude/rules/nextjs-conventions.md) を参照。
 
 ## 参照ドキュメント
 

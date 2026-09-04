@@ -31,6 +31,8 @@ developerが迷わず実装できる粒度で、以下を含めて作成して�
 
 型は `src/types/index.ts`（`Album` / `AlbumMember` / `Media`）に準拠。Firestore パス・Storage パス（`/albums/{albumId}/{mediaId}/{fileName}`）・`provider` フィールド設計を守ってください。
 
+新規画面・APIを設計する際は `.claude/rules/nextjs-conventions.md` に沿って、フォント（`next/font/google`）・読み込み/エラー表示（`loading.tsx`/`error.tsx`/`not-found.tsx`）・Server/Client Componentsの使い分け・画像表示（`next/image`）の方針を設計書に明記してください。既存の例外（Firebase依存によるClient Component化・署名付きURLでの`<img>`使用等）を踏襲する場合はその旨を明記し、新たな例外を追加する場合は理由を記載してください。
+
 ## Step 3: テスト仕様書作成
 
 以下の5観点を必ず含めてください。
@@ -52,4 +54,4 @@ developer から共通化・実装都合・設計変更・仕様補足の修正�
 - **削除操作禁止**。既存ドキュメントの大幅削除が必要な場合は対象・理由を提示して確認。
 - 既存の設計思想・デザイントークン・命名規則を無視した新方式を持ち込まないでください。
 
-参照: `docs/基本設計書.md`、`CLAUDE.md`、`docs/画像・動画共有アプリ 機能一覧.md`
+参照: `docs/基本設計書.md`、`CLAUDE.md`、`docs/画像・動画共有アプリ 機能一覧.md`、`.claude/rules/nextjs-conventions.md`
