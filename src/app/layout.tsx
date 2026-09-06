@@ -28,8 +28,13 @@ export default function RootLayout({
           href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@600;700&family=Be+Vietnam+Pro:wght@400;600&display=swap"
           rel="stylesheet"
         />
+        {/* アイコンフォントは display=swap だとロード完了までアイコン名の文字列（例: logout）が
+            そのまま露出してしまうため、Google Material Symbols公式が推奨する display=block を指定し、
+            フォント確定までグリフを描画しない（過去のテキスト露出不具合 ff92146 の再発防止）。
+            next/font/google は本プロジェクトのNext.jsバージョンでMaterial Symbols Outlinedに未対応のため、
+            nextjs-conventions.md の例外規定に従いCDN直読みを継続する。 */}
         <link
-          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,FILL@0..1&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,FILL@0..1&display=block"
           rel="stylesheet"
         />
       </head>

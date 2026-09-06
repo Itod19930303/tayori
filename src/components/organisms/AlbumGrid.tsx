@@ -32,9 +32,13 @@ export function AlbumGrid({ albums, loading, onCreateClick, onSelect }: AlbumGri
   // 0件時は空状態UIと作成を促すCTAを表示する（基本設計書 4.4 空状態）。
   // ヘッダーにも同じ「新しいアルバム」ボタンがあるが、空状態はユーザーの視線が
   // 集まる位置のため、その場で行動できるようボタンをもう一つ置く（UX観点の追加対応）。
+  // flex-1 でHomeTemplate内の残り空間に配置すると、その残り空間自体が「アルバム」見出し行の
+  // 分だけ既に画面下寄りにズレており、その中で中央寄せしても画面全体の中央にはならない。
+  // TopHeader（h-16=64px）の直下から画面下端まで（position: fixed）を基準に中央寄せすることで、
+  // ページ固有見出しの高さに影響されず常に画面中央に表示する。
   if (albums.length === 0) {
     return (
-      <div className="flex flex-1 flex-col items-center justify-center gap-stack-md py-stack-lg text-center">
+      <div className="fixed inset-x-0 top-16 bottom-0 flex flex-col items-center justify-center gap-stack-md px-margin-mobile text-center md:px-margin-desktop">
         <p className="font-headline-md text-headline-md text-on-surface">
           まだアルバムがありません
         </p>

@@ -27,7 +27,10 @@ export function HomeTemplate({
   const showHeaderCreateButton = loading || albums.length > 0
 
   return (
-    <div className="flex min-h-screen flex-1 flex-col gap-stack-lg bg-background px-margin-mobile py-stack-lg md:px-margin-desktop">
+    // min-h-screen は付けない。page.tsx 側の外枠が既に min-h-screen flex-col のため、
+    // ここでも指定すると TopHeader 分の高さが上乗せされてページがビューポートより
+    // 縦長になり、AlbumGrid 空状態の flex-1 中央寄せがビューポート中央からずれてしまう。
+    <div className="flex flex-1 flex-col gap-stack-lg bg-background px-margin-mobile py-stack-lg md:px-margin-desktop">
       <header className="flex items-center justify-between">
         <h1 className="font-headline-lg text-headline-lg text-on-surface">
           アルバム

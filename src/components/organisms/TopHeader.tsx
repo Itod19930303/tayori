@@ -40,7 +40,10 @@ export function TopHeader({
         </span>
 
         {/* ホームボタン（設計書4.10.1）。押下時は onHomeClick を呼ぶだけに留め、遷移・離脱確認は page 層責務。
-            homeDisabled のときは戻る導線と同一のグレーアウト + aria-disabled 表現で非活性化し、クリックしても発火しない。 */}
+            homeDisabled のときは戻る導線と同一のグレーアウト + aria-disabled 表現で非活性化し、クリックしても発火しない。
+            アイコンフォント（Material Symbols）はロード完了までアイコン名の文字列がそのまま露出し
+            「home ホーム」のように二重表示される問題があったため、フォントに依存しないインラインSVGで
+            家アイコンを表示する。 */}
         <button
           type="button"
           onClick={onHomeClick}
@@ -49,12 +52,14 @@ export function TopHeader({
           aria-label="ホームへ戻る"
           className="inline-flex h-9 items-center gap-1 rounded-lg px-3 font-label-md text-label-md text-on-surface-variant hover:bg-surface-variant active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent"
         >
-          <span
-            className="material-symbols-outlined text-xl"
+          <svg
             aria-hidden="true"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            className="size-5 -translate-y-0.5"
           >
-            home
-          </span>
+            <path d="M12 3.172 2.25 11h2.25v9h4.5v-6h6v6h4.5v-9h2.25L12 3.172Z" />
+          </svg>
           ホーム
         </button>
       </div>
@@ -86,18 +91,15 @@ export function TopHeader({
           </span>
 
           {/* Ghost 風のログアウトボタン。押下時は onLogoutClick を呼ぶだけに留める（organisms 層制約）。
-              確認ダイアログは設けず即時ログアウトとする（緊急対応方針・設計書 4.10）。 */}
+              確認ダイアログは設けず即時ログアウトとする（緊急対応方針・設計書 4.10）。
+              アイコンフォント（Material Symbols）が未ロードの間はアイコン名の文字列が
+              そのまま露出し「logout ログアウト」のように二重表示されるため、アイコンは付けず
+              テキストラベルのみで表示する。 */}
           <button
             type="button"
             onClick={onLogoutClick}
             className="inline-flex h-9 items-center gap-1 rounded-lg px-3 font-label-md text-label-md text-on-surface-variant hover:bg-surface-variant active:scale-95"
           >
-            <span
-              className="material-symbols-outlined text-xl"
-              aria-hidden="true"
-            >
-              logout
-            </span>
             ログアウト
           </button>
         </div>
